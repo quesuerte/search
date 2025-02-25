@@ -1,0 +1,46 @@
+import React, { useState } from 'react';
+import SearchBar from './SearchBar';
+import SearchResults from './SearchResults';
+import { keywordSearch } from '../api/api';
+
+function SearchPage() {
+  const [searchResults, setSearchResults] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSearch = async (searchTerm) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const results = await keywordSearch(searchTerm);
+      setSearchResults(results);
+    } catch (err) {
+      setError('Failed to fetch search results. Please try again.');
+      console.error('Search error:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="search-page">
+      <SearchBar onSearch={handleSearch} />
+      
+      {isLoading && <div className="loading">Loading results...</div>}
+      
+      {error && <div className="error-message">{error}</div>}
+      
+      {!isLoading && !error && searchResults.length === 0 && (
+        <div className="no-results">
+          No documents found. Try a different search term.
+        </div>
+      )}
+      
+      {!isLoading && !error && searchResults.length > 0 && (
+        <SearchResults results={searchResults} />
+      )}
+    </div>
+  );
+}
+
+export default SearchPage;

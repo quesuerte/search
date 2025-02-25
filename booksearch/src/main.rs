@@ -4,6 +4,7 @@ use rocket::{serde::json::Json,
             util::map}};
 use rocket_db_pools::{Connection,Database};
 use tokio::io::AsyncRead;
+use std::env;
 
 mod response;
 mod backend;
@@ -38,28 +39,32 @@ async fn keyword_search(db: Connection<PostgresBackend>, input: Json<Query<'_>>)
 
 #[launch]
 fn rocket() -> _ {
-    // BACKEND_USER
-    // BACKEND_PASS
-    // BACKEND_HOST
-    // BACKEND_PORT
-    // BACKEND_DB
-    // BACKEND_POOL_SIZE
-    // BACKEND_POOL_TIMEOUT
-    // OLLAMA_PROTO
-    // OLLAMA_HOST
-    // OLLAMA_PORT
-    // OLLAMA_MODEL
+    // Postgres connection parameters
+    let pg_user = env::var("BACKEND_USER").unwrap_or("postgres".to_string());
+    let pg_pass = env::var("BACKEND_PASS").unwrap_or("admin".to_string());
+    let pg_host = env::var("BACKEND_HOST").unwrap_or("postgres".to_string());
+    let pg_port: i32 = env::var("BACKEND_PORT").unwrap_or(5432.to_string()).parse().unwrap();
+    let pg_db = env::var("BACKEND_DB").unwrap_or("postgres".to_string());
+    let pg_pool_size: i32 = env::var("BACKEND_POOL_SIZE").unwrap_or(10.to_string()).parse().unwrap();
+    let pg_pool_timeout: i32 = env::var("BACKEND_POOL_TIMEOUT").unwrap_or(5.to_string()).parse().unwrap();
+
+    // Ollama connection parameters
+    let ollama_proto = env::var("OLLAMA_PROTO").unwrap_or("http".to_string());
+    let ollama_host = env::var("OLLAMA_HOST").unwrap_or("localhost".to_string());
+    let ollama_port: i32 = env::var("OLLAMA_PORT").unwrap_or(11434.to_string()).parse().unwrap();
+    let ollama_model = env::var("OLLAMA_MODEL").unwrap_or("all-minilm".to_string());
+
     let db: Map<_, Value> = map! {
-        "url" => "postgres://postgres:admin@localhost:5432/postgres".into(),
-        "pool_size" => 10.into(),
-        "timeout" => 5.into(),
+        "url" => format!("postgres://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}").into(),
+        "pool_size" => pg_pool_size.into(),
+        "timeout" => pg_pool_timeout.into(),
     };
 
     let figment = rocket::Config::figment()
         .merge(("databases", map!["main" => db]));
 
 
-    let ollama_con = OllamaConfig::new("http://localhost:11434".to_owned(),"all-minilm".to_owned());
+    let ollama_con = OllamaConfig::new(format!("{ollama_proto}://{ollama_host}:{ollama_port}"),ollama_model);
     rocket::custom(figment)
     //rocket::build()
     .mount("/", routes![index,semantic_search,keyword_search,get_pdf])
