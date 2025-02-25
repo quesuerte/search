@@ -1,0 +1,23 @@
+[package]
+name = "booksearch"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5.1", features = ["json"] }
+reqwest = { version = "0.11", features = ["stream"] }
+sqlx = { version = "0.7.4", features = ["postgres", "runtime-tokio", "macros"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+ollama-rs = "0.2.5"
+url = "2.5.4"
+rocket_db_pools = { version = "0.2.0", features = ["sqlx_postgres"]}
+bytes = "1.10.0"
+tokio-util = { version = "0.7.13", features = ["io","compat"]}
+futures = { version = "0.3.31", features = ["io-compat","compat"] }
+futures-util = { version = "0.3.31", features = ["io-compat"] }
+# pgvector requires v0.3 on versions of sqlx < 0.8 (which rocket_db_pools uses)
+pgvector = { version = "0.3.4", features = ["sqlx"] }
+
+[dev-dependencies]
+testcontainers = "0.23.2"

@@ -1,0 +1,30 @@
+#docker run -d --gpus=all -p 11434:11434 --name ollama --entrypoint "bash" ollama/ollama:latest -c 'ollama serve & pid=$!; sleep 5; ollama pull all-minilm; wait $pid'
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ollama-deployment
+spec:
+  selector:
+    matchLabels:
+      app: pdf-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pdf-app
+    spec:
+      hostname: ollama
+      containers:
+      - name: ollama-container
+        image: ollama/ollama:latest
+        command:
+          - bash
+        args:
+          - -c
+          - 'ollama serve & pid=$!; sleep 5; ollama pull all-minilm; wait $pid'
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+        ports:
+        - name: ollama-port
+          containerPort: 11434

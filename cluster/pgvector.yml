@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pgvector-deployment
+spec:
+  selector:
+    matchLabels:
+      app: pdf-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pdf-app
+    spec:
+      hostname: pgvector
+      containers:
+      - name: pgvector-container
+        image: pgvector/pgvector:pg17
+        env:
+        - name: POSTGRES_PASSWORD
+          value: admin
+        ports:
+        - name: pgvector-port
+          containerPort: 5432
+        volumeMounts:
+        - name: pgvector-sql
+          mountPath: /docker-entrypoint-initdb.d/pgvector.sql
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - psql
+            - -U
+            - postgres
+            - -c
+            - "SELECT 1"
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      volumes:
+      - name: pgvector-sql
+        hostPath:
+          path: /run/desktop/mnt/host/c/Users/Blinn/Documents/rust/search_project/booksearch/postgres.sql
