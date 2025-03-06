@@ -13,7 +13,7 @@ function SearchPage() {
       setIsLoading(true);
       setError(null);
       const results = await keywordSearch(searchTerm);
-      setSearchResults(results);
+      setSearchResults(results.results || []);
     } catch (err) {
       setError('Failed to fetch search results. Please try again.');
       console.error('Search error:', err);

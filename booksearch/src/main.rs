@@ -1,8 +1,10 @@
 #[macro_use] extern crate rocket;
-use rocket::{serde::json::Json,
+use rocket::{http::Method,
+            serde::json::Json,
             figment::{value::{Map, Value}, 
             util::map}};
 use rocket_db_pools::{Connection,Database};
+use rocket_cors::{AllowedOrigins, CorsOptions};
 use tokio::io::AsyncRead;
 use std::env;
 
@@ -42,7 +44,7 @@ fn rocket() -> _ {
     // Postgres connection parameters
     let pg_user = env::var("BACKEND_USER").unwrap_or("postgres".to_string());
     let pg_pass = env::var("BACKEND_PASS").unwrap_or("admin".to_string());
-    let pg_host = env::var("BACKEND_HOST").unwrap_or("postgres".to_string());
+    let pg_host = env::var("BACKEND_HOST").unwrap_or("localhost".to_string());
     let pg_port: i32 = env::var("BACKEND_PORT").unwrap_or(5432.to_string()).parse().unwrap();
     let pg_db = env::var("BACKEND_DB").unwrap_or("postgres".to_string());
     let pg_pool_size: i32 = env::var("BACKEND_POOL_SIZE").unwrap_or(10.to_string()).parse().unwrap();
@@ -63,13 +65,22 @@ fn rocket() -> _ {
     let figment = rocket::Config::figment()
         .merge(("databases", map!["main" => db]));
 
-
+    let cors = CorsOptions::default()
+        .allowed_origins(AllowedOrigins::all())
+        .allowed_methods(
+            vec![Method::Get, Method::Post, Method::Patch]
+                .into_iter()
+                .map(From::from)
+                .collect(),
+        )
+        .allow_credentials(true);
     let ollama_con = OllamaConfig::new(format!("{ollama_proto}://{ollama_host}:{ollama_port}"),ollama_model);
     rocket::custom(figment)
     //rocket::build()
     .mount("/", routes![index,semantic_search,keyword_search,get_pdf])
     .manage(ollama_con)
     .attach(PostgresBackend::init())
+    .attach(cors.to_cors().unwrap())
 }
 
 #[cfg(test)]

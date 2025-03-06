@@ -1,16 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { fetchPDF, fetchDocumentMetadata } from '../api/api';
+import { fetchPDF } from '../api/api';
+//import pdfjsWorker from "react-pdf/node_modules/pdfjs-dist/build/pdf.worker.entry";
+//import 'pdfjs-dist/webpack';
 
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
 // Set up the worker for react-pdf
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+//pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+// pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+//   'pdfjs-dist/legacy/build/pdf.worker.min.js',
+//   import.meta.url,
+// ).toString();
 
 function PDFReader() {
   const { documentId } = useParams();
   const [pdfUrl, setPdfUrl] = useState(null);
-  const [metadata, setMetadata] = useState(null);
-  const [numPages, setNumPages] = useState(null);
+  const [numPages, setNumPages] = useState(100);
   const [pageNumber, setPageNumber] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,9 +27,6 @@ function PDFReader() {
       try {
         setIsLoading(true);
         
-        // Fetch document metadata
-        const docMetadata = await fetchDocumentMetadata(documentId);
-        setMetadata(docMetadata);
         
         // Fetch the PDF
         const pdfData = await fetchPDF(documentId);
@@ -74,14 +77,9 @@ function PDFReader() {
         <Link to="/" className="back-button">
           ← Back to Search
         </Link>
-        
-        {metadata && (
-          <div className="document-info">
-            <h2>{metadata.title}</h2>
-            {metadata.author && <p>Author: {metadata.author}</p>}
-            {metadata.datePublished && <p>Published: {metadata.datePublished}</p>}
+        <div className="document-info">
+            <h2>{documentId}</h2>
           </div>
-        )}
       </div>
 
       {isLoading && <div className="loading">Loading document...</div>}

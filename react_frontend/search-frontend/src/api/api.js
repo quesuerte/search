@@ -3,13 +3,13 @@ export async function keywordSearch(searchTerm) {
       const options = {
         method: 'POST',                   // Specify the HTTP method
         headers: {
-            'Content-Type': 'application/json'  // Specify the content type
+            'Content-Type': 'application/json' // Specify the content type
             // Add any other headers you need (authentication, etc.)
         },
         body: JSON.stringify({query: searchTerm})          // Convert data object to JSON string
       };
       // Replace with your actual API endpoint
-      const response = await fetch('http://host.docker.internal:8000/keyword',options);
+      const response = await fetch('http://localhost:8000/keyword',options);
       
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);
@@ -25,7 +25,7 @@ export async function keywordSearch(searchTerm) {
   export async function fetchPDF(documentId) {
     try {
       // Replace with your actual API endpoint
-      const response = await fetch(`http://host.docker.internal:8000/pdf/${documentId}`);
+      const response = await fetch(`http://localhost:8000/pdf/${documentId}`);
       
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);

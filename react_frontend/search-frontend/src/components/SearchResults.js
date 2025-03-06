@@ -8,12 +8,12 @@ function SearchResults({ results }) {
       <ul className="results-list">
         {results.map((doc) => (
           <li key={doc.id} className="result-item">
-            <Link to={`/pdf/${doc.id}`} className="result-link">
-              <h3 className="doc-title">{doc.title}</h3>
-              <p className="doc-description">{doc.description}</p>
-              {doc.matchedText && (
+            <Link to={`http://localhost:8000/pdf/${doc.id}#page=${doc.page}`} className="result-link">
+              <h3 className="doc-title">{doc.id}</h3>
+              <p className="doc-description">Page: {doc.page}</p>
+              {/*doc.matchedText && (
                 <p className="match-context">...{doc.matchedText}...</p>
-              )}
+              )*/}
             </Link>
           </li>
         ))}
