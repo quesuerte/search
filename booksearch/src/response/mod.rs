@@ -93,6 +93,9 @@ pub struct QueryResponse {
 struct RowResponse {
     id: String,
     page: i32,
+    title: String,
+    author: String,
+    summary: String,
     rank: Rank,
 }
 
@@ -109,6 +112,9 @@ pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Opti
     for row in rows {
         let id: String = row.get("id");
         let page: i32 = row.get("page");
+        let title: String = row.try_get("title").unwrap_or(id.clone());
+        let author: String = row.try_get("author").unwrap_or_default();
+        let summary: String = row.try_get("summary").unwrap_or_default();
         let rank = match row.try_get::<f32, &str>("rank") { // Try getting as i64 first
             Ok(rank_f32) => Rank::Keyword(rank_f32 as f32), // Convert to i32
             Err(_) => match row.try_get::<f64, &str>("rank") { // If i64 fails, try f64
@@ -116,7 +122,7 @@ pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Opti
                 Err(e) => return Err(sqlx::Error::TypeNotFound{ type_name: format!("Could not parse rank column into i32 or f64: {}", e.to_string())})
             }
         };
-        results.push(RowResponse{id,page,rank});
+        results.push(RowResponse{id,page,title,author,summary,rank});
     }
     Ok(QueryResponse{results})
 }

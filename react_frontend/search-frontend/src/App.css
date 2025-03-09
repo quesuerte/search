@@ -3,6 +3,26 @@
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
+  color: white;
+}
+
+/* Create the glass panel effect for your content containers */
+.glass-panel {
+  /* Basic box styling */
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  
+  /* Glass effect */
+  background-color: rgba(255, 255, 255, 0.15);  /* very subtle white background */
+  backdrop-filter: blur(10px);  /* this creates the frosted effect */
+  -webkit-backdrop-filter: blur(10px);  /* for Safari support */
+  
+  /* Add a subtle border */
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  
+  /* Add a subtle shadow */
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
 }
 
 .app-header {
@@ -13,7 +33,7 @@
 
 .app-header h1 {
   margin: 0;
-  color: #333;
+  color: white;
 }
 
 /* Search page styles */
@@ -53,7 +73,7 @@
   padding: 20px;
   text-align: center;
   margin: 30px 0;
-  background-color: #f9f9f9;
+  /*background-color: #f9f9f9;*/
   border-radius: 4px;
 }
 
@@ -73,6 +93,8 @@
   border: 1px solid #eaeaea;
   border-radius: 4px;
   transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: row;
 }
 
 .result-item:hover {
@@ -81,9 +103,17 @@
 }
 
 .result-link {
-  display: block;
+  /*display: block;*/
   color: inherit;
   text-decoration: none;
+  flex: 0 0 40%; /* Adjust this percentage as needed */
+  padding: 15px;
+}
+
+.result-right {
+  flex: 1;
+  padding: 15px;
+  border-left: 1px solid #eee;
 }
 
 .doc-title {

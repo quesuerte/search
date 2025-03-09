@@ -1,27 +1,46 @@
-import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { Document, Page, pdfjs } from 'react-pdf';
+import React, { /*useCallback,*/ useEffect, useState } from 'react';
+import { useLocation, useParams, /*useSearchParams,*/ Link } from 'react-router-dom';
+import { Document, Page } from 'react-pdf';
 import { fetchPDF } from '../api/api';
+import * as pdfjs from 'pdfjs-dist'
+import "pdfjs-dist/build/pdf.worker.mjs";
 //import pdfjsWorker from "react-pdf/node_modules/pdfjs-dist/build/pdf.worker.entry";
 //import 'pdfjs-dist/webpack';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
-// Set up the worker for react-pdf
-//pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-// pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-//   'pdfjs-dist/legacy/build/pdf.worker.min.js',
-//   import.meta.url,
-// ).toString();
+import '../App.css'
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
+
 
 function PDFReader() {
+  /*const [searchText, setSearchText] = useState('');*/
+  /*const queryParam = 'query';*/
+  const getPageFromHash = () => {
+    const match = location.hash.match(/#page=(\d+)/);
+    return match ? parseInt(match[1], 10) : 1;
+  };
+  /*const textRenderer = useCallback(
+    (textItem) => highlightPattern(textItem.str, searchText),
+    [searchText]
+  );
+  const highlightPattern = (text, pattern) => {
+    return text.replace(pattern, (value) => `<mark>${value}</mark>`);
+  }*/
+  
+  const location = useLocation();
   const { documentId } = useParams();
+  /*const [searchParams] = useSearchParams();*/
   const [pdfUrl, setPdfUrl] = useState(null);
   const [numPages, setNumPages] = useState(100);
-  const [pageNumber, setPageNumber] = useState(1);
+  const [pageNumber, setPageNumber] = useState(getPageFromHash);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
-
+  
   useEffect(() => {
     const loadDocument = async () => {
       try {
@@ -34,6 +53,7 @@ function PDFReader() {
         setPdfUrl(url);
         
         setIsLoading(false);
+        /*setSearchText(searchParams.get(queryParam).toLowerCase());*/
       } catch (err) {
         console.error('Error loading PDF:', err);
         setError('Failed to load the document. Please try again later.');
@@ -56,10 +76,12 @@ function PDFReader() {
   };
 
   const goToPrevPage = () => {
+    /*setSearchText('');*/
     setPageNumber((prevPageNumber) => Math.max(prevPageNumber - 1, 1));
   };
 
   const goToNextPage = () => {
+    /*setSearchText('');*/
     setPageNumber((prevPageNumber) => Math.min(prevPageNumber + 1, numPages));
   };
 
@@ -110,6 +132,7 @@ function PDFReader() {
           <div className="pdf-document">
             <Document
               file={pdfUrl}
+              onItemClick={({ pageNumber }) => setPageNumber(pageNumber)}
               onLoadSuccess={onDocumentLoadSuccess}
               error={<div>Failed to load PDF</div>}
               loading={<div>Loading PDF...</div>}
@@ -119,6 +142,7 @@ function PDFReader() {
                 scale={scale}
                 renderTextLayer={true}
                 renderAnnotationLayer={true}
+                /*customTextRenderer={textRenderer}*/
               />
             </Document>
           </div>

@@ -1,9 +1,12 @@
-CREATE EXTENSION vector;
 
+CREATE DATABASE search;
+\connect search;
+CREATE EXTENSION vector;
 CREATE TABLE sources (
     id VARCHAR(2048) PRIMARY KEY,
-    uri VARCHAR(2048),
+    uri VARCHAR(2048) NOT NULL,
     title VARCHAR(100),
+    author VARCHAR(500),
     summary VARCHAR(2048),
     title_embedding VECTOR(384),
     summary_embedding VECTOR(384)
@@ -36,3 +39,9 @@ CREATE TABLE keyword_search (
     ON UPDATE CASCADE
 );
 CREATE INDEX ON keyword_search USING gin(ts);
+
+
+CREATE USER search_readonly WITH PASSWORD 'test_password';
+GRANT CONNECT ON DATABASE search TO search_readonly;
+GRANT USAGE ON SCHEMA public TO search_readonly;
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO search_readonly;

@@ -9,6 +9,7 @@ export async function keywordSearch(searchTerm) {
         body: JSON.stringify({query: searchTerm})          // Convert data object to JSON string
       };
       // Replace with your actual API endpoint
+      //const response = await fetch('https://search.carsonblinn.com/keyword',options);
       const response = await fetch('http://localhost:8000/keyword',options);
       
       if (!response.ok) {
@@ -25,7 +26,7 @@ export async function keywordSearch(searchTerm) {
   export async function fetchPDF(documentId) {
     try {
       // Replace with your actual API endpoint
-      const response = await fetch(`http://localhost:8000/pdf/${documentId}`);
+      const response = await fetch(`https://search.carsonblinn.com/pdf/${documentId}`);
       
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);

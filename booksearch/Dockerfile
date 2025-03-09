@@ -16,6 +16,7 @@ RUN cargo build --release --verbose
 FROM debian:stable-slim
 RUN apt-get update && apt-get install -y \
 openssl \
+ca-certificates \
 && rm -rf /var/lib/apt/lists/*
 # Create a system group
 RUN addgroup --system search && adduser --system --ingroup search --no-create-home search
