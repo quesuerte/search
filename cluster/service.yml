@@ -18,12 +18,34 @@ spec:
     protocol: "TCP"
     port: 8888
     targetPort: jupyter-port
-  - name: react
+  - name: pulsar-http
     protocol: "TCP"
     port: 8080
-    targetPort: react-bolt
+    targetPort: pul-http-port
   #- name: booksearch
   #  protocol: "TCP"
   #  port: 8000
   #  targetPort: bs-port
+  # - name: kafka-ext
+  #   protocol: "TCP"
+  #   port: 29092
+  #   targetPort: extkafka-port
+  - name: pulsar
+    protocol: "TCP"
+    port: 6650
+    targetPort: pulsar-port
   type: LoadBalancer
+# ---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: kafka-internal
+# spec:
+#   selector:
+#     app: pdf-app
+#   ports:
+#   - name: kafka
+#     protocol: "TCP"
+#     port: 9092
+#     targetPort: kafka-port
+#   type: ClusterIP

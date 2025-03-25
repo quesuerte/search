@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: pgvector-deployment
+  name: postgres-deployment
 spec:
   selector:
     matchLabels:
@@ -12,10 +12,10 @@ spec:
       labels:
         app: pdf-app
     spec:
-      hostname: pgvector
+      hostname: postgres
       containers:
-      - name: pgvector-container
-        image: pgvector/pgvector:pg17
+      - name: postgres-container
+        image: timescale/timescaledb:latest-pg17
         env:
         - name: POSTGRES_PASSWORD
           value: admin

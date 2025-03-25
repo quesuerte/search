@@ -1,0 +1,77 @@
+#pulsar-client consume public/default/search_log -s test -n 0
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pulsar-deployment
+spec:
+  selector:
+    matchLabels:
+      app: pdf-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pdf-app
+    spec:
+      hostname: pulsar
+      containers:
+      - name: pulsar
+        image: apachepulsar/pulsar:latest
+        env:
+        - name: PULSAR_STANDALONE_USE_ZOOKEEPER
+          value: "1"
+        command:
+        - bin/pulsar
+        - standalone
+        ports:
+        - name: pul-http-port
+          containerPort: 8080
+        - name: pulsar-port
+          containerPort: 6650
+        readinessProbe:
+          exec:
+            command:
+            - bin/pulsar-admin 
+            - brokers
+            - healthcheck
+          periodSeconds: 15
+          initialDelaySeconds: 20
+          timeoutSeconds: 10
+          failureThreshold: 3
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: load-sink-config
+spec:
+  template:
+    spec:
+      containers:
+      - name: load-sink
+        image: alpine:latest
+        env:
+        - name: PULSAR_URL
+          value: "http://pdf-service:8080"
+        command:
+        - sh
+        - -c
+        - |-
+          _term() { 
+            echo "Caught SIGTERM signal!" 
+            exit 1
+          }
+          trap _term SIGTERM
+          apk add curl --no-cache
+          curl -X PUT "${PULSAR_URL}/admin/v2/persistent/public/default/search_log"
+          curl -v -X POST "${PULSAR_URL}/admin/v3/sinks/public/default/postgres-sink" -H "Expect:" \
+          -F "sinkConfig={\"tenant\": \"public\",\"namespace\": \"default\",\"name\": \"postgres-sink\",\"inputs\": [\"search_log\"],\"configs\": {\"jdbcUrl\": \"jdbc:postgresql://pdf-service:5432/logs\",\"tableName\": \"search_requests\",\"userName\": \"log_writer\",\"password\": \"test_password\"}};type=application/json" \
+          -F "data=@/pulsar/connectors/pulsar-io-jdbc-postgres-4.0.3.nar" || exit 1
+          curl -v "${PULSAR_URL}/admin/v2/schemas/public/default/search_log/schema" -H "Content-Type: application/json" -d '{"type": "object","properties": {"id": { "type": "integer" },"action_time": { "type": "string", "format": "date-time" },"host": { "type": "string" },"remote": { "type": "string" },"method": { "type": "string" },"route": { "type": "string" },"request_headers": { "type": "string" },"status": { "type": "string", "nullable": true },"response_headers": { "type": "string", "nullable": true }},"required": ["id", "action_time", "host", "remote", "method", "route", "request_headers"]}' || exit 1
+        volumeMounts:
+        - name: postgres-sink
+          mountPath: /pulsar/connectors/pulsar-io-jdbc-postgres-4.0.3.nar
+      volumes:
+      - name: postgres-sink
+        hostPath:
+          path: /run/desktop/mnt/host/c/Users/Blinn/Documents/rust/search_project/cluster/pulsar/pulsar-io-jdbc-postgres-4.0.3.nar
+      restartPolicy: Never

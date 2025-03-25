@@ -1,0 +1,101 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config-map
+data:
+  nginx.conf: |
+    worker_processes  auto;
+    error_log  /var/log/nginx/error.log notice;
+    pid        /tmp/nginx.pid;
+    events {
+        worker_connections  1024;
+    }
+    http {
+        proxy_temp_path /tmp/proxy_temp;
+        client_body_temp_path /tmp/client_temp;
+        fastcgi_temp_path /tmp/fastcgi_temp;
+        uwsgi_temp_path /tmp/uwsgi_temp;
+        scgi_temp_path /tmp/scgi_temp;
+        include       /etc/nginx/mime.types;
+        default_type  application/octet-stream;
+        log_format  main  '$remote_addr - $remote_user [$time_local] "$request" '
+                          '$status $body_bytes_sent "$http_referer" '
+                          '"$http_user_agent" "$http_x_forwarded_for"';
+        access_log  /var/log/nginx/access.log  main;
+        sendfile        on;
+        #tcp_nopush     on;
+        keepalive_timeout  65;
+        #gzip  on;
+        server {
+            http2 on;
+            listen 8080;
+            server_name 192.168.0.108;
+            location / {
+                root /www;
+            }
+        }
+        server {
+            http2 on;
+            listen 8080 default;
+            location / {
+                proxy_pass http://host.docker.internal:11434;
+                proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $remote_addr;
+                proxy_set_header X-Forwarded-Proto $scheme;
+            }
+        }
+    }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: site-map
+data:
+  index.html: |
+    <!doctype html>
+    <html>
+      <head>
+        <title>This is the title of the webpage!</title>
+      </head>
+      <body>
+        <p>This is an example paragraph. Anything in the <strong>body</strong> tag will appear on the page, just like this <strong>p</strong> tag and its contents.</p>
+      </body>
+    </html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment 
+spec:
+  selector:
+    matchLabels:
+      app: pdf-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pdf-app
+    spec:
+      hostname: nginx
+      containers:
+      - name: nginx-container
+        image: nginxinc/nginx-unprivileged:alpine
+        ports:
+        - name: nginx-http
+          containerPort: 8080
+        #- name: nginx-https
+        #  containerPort: 8443
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: site
+          mountPath: /www/index.html
+          subPath: index.html
+      volumes:
+      - name: conf
+        configMap:
+          name: nginx-config-map
+      - name: site
+        configMap:
+          name: site-map

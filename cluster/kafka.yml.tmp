@@ -1,0 +1,53 @@
+#/opt/kafka/bin/kafka-topics.sh --create --topic test --bootstrap-server localhost:9092
+#/opt/kafka/bin/kafka-console-producer.sh
+#https://rmoff.net/2018/08/02/kafka-listeners-explained/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kafka-deployment
+spec:
+  selector:
+    matchLabels:
+      app: pdf-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pdf-app
+    spec:
+      hostname: kafka
+      containers:
+      - name: kafka-container
+        image: apache/kafka:latest
+        env:
+        - name: KAFKA_NODE_ID
+          value: "1"
+        - name: KAFKA_PROCESS_ROLES
+          value: "broker,controller"
+        - name: KAFKA_LISTENERS
+          value: "EXTLISTENER://0.0.0.0:29092,KUBLISTENER://0.0.0.0:9092,CONTROLLER://localhost:9093"
+        - name: KAFKA_ADVERTISED_LISTENERS
+          value: "EXTLISTENER://localhost:29092,KUBLISTENER://kafka-internal:9092"
+        - name: KAFKA_INTER_BROKER_LISTENER_NAME
+          value: "KUBLISTENER"
+        - name: KAFKA_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
+        - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+          value: "CONTROLLER:PLAINTEXT,EXTLISTENER:PLAINTEXT,KUBLISTENER:PLAINTEXT"
+        - name: KAFKA_CONTROLLER_QUORUM_VOTERS
+          value: "1@localhost:9093"
+        - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+          value: "1"
+        - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+          value: "0"
+        - name: KAFKA_NUM_PARTITIONS
+          value: "3"
+        ports:
+        - name: kafka-port
+          containerPort: 9092
+        - name: extkafka-port
+          containerPort: 29092
