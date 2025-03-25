@@ -8,8 +8,10 @@ use rocket_cors::{AllowedOrigins, CorsOptions};
 use tokio::io::AsyncRead;
 use std::env;
 
+mod fairing;
 mod response;
 mod backend;
+use fairing::QueueAppender;
 use backend::postgres::PostgresBackend;
 use response::{search,
     pdf_stream,
@@ -56,6 +58,10 @@ fn rocket() -> _ {
     let ollama_port: i32 = env::var("OLLAMA_PORT").unwrap_or(11434.to_string()).parse().unwrap();
     let ollama_model = env::var("OLLAMA_MODEL").unwrap_or("all-minilm".to_string());
 
+    // Kafka connection parameters
+    let broker = env::var("BROKER_HOST").unwrap_or("localhost".to_string());
+    let topic = env::var("BROKER_TOPIC").unwrap_or("search_log".to_string());
+
     let db: Map<_, Value> = map! {
         "url" => format!("postgres://{pg_user}:{pg_pass}@{pg_host}:{pg_port}/{pg_db}").into(),
         "pool_size" => pg_pool_size.into(),
@@ -75,12 +81,14 @@ fn rocket() -> _ {
         )
         .allow_credentials(true);
     let ollama_con = OllamaConfig::new(format!("{ollama_proto}://{ollama_host}:{ollama_port}"),ollama_model);
+    let pulsar_appender = QueueAppender::build(broker,topic).unwrap();
     rocket::custom(figment)
     //rocket::build()
     .mount("/", routes![index,semantic_search,keyword_search,get_pdf])
     .manage(ollama_con)
     .attach(PostgresBackend::init())
     .attach(cors.to_cors().unwrap())
+    .attach(pulsar_appender)
 }
 
 #[cfg(test)]
