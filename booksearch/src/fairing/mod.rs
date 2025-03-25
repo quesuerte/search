@@ -1,14 +1,13 @@
 use std::time::{SystemTime,UNIX_EPOCH};
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use pulsar::{producer, proto, Error as PulsarError, Producer, Pulsar, SerializeMessage, TokioExecutor};
-use std::sync::mpsc::{Sender, Receiver, channel};
+use tokio::sync::mpsc::{UnboundedReceiver,UnboundedSender};
+use std::sync::Arc;
 use rocket::serde::json::serde_json;
-use rocket::{Data, Request, Response};
+use rocket::{Data, Request, Response, Rocket, Orbit};
 use rocket::fairing::{Fairing, Info, Kind};
 use serde::Serialize;
-use gethostname::gethostname;
-use tokio::runtime::Runtime;
-use std::thread;
+
 
 struct IdCounter {
     count: AtomicU32,
@@ -27,101 +26,83 @@ impl IdCounter {
     }
 }
 
+pub struct BackgroundLogger {
+    shutdown: Arc<AtomicBool>,
+}
+
+impl BackgroundLogger {
+    pub async fn build(broker: String, topic_name: String, host: String, rx: UnboundedReceiver<LogRecord>) -> Result<Self,PulsarError> {
+        let shutdown = Arc::new(AtomicBool::new(false));
+        let addr = format!("pulsar://{}",broker);
+        let mut producer = create_producer(addr,topic_name,host.clone()).await?;
+        let thread_shutdown = shutdown.clone();
+        let mut receiver = rx;
+        tokio::spawn(async move {
+            while !thread_shutdown.load(Ordering::Relaxed) {
+                let msg = match receiver.recv().await {
+                    Some(m) => m,
+                    None => {
+                        eprintln!("Logging system disconnected. If this does not correspond with a shutdown, something went horribly wrong.");
+                        return;
+                    }
+                };
+                match send_msg(&mut producer,msg).await{
+                    Ok(_) => (),
+                    Err(e) => eprintln!("Failed to send message to Pulsar: {}",e.to_string()),
+                };
+            }
+            receiver.close();
+            while let Some(msg) = receiver.recv().await {
+                match send_msg(&mut producer,msg).await{
+                    Ok(_) => (),
+                    Err(e) => eprintln!("Failed to send message to Pulsar: {}",e.to_string()),
+                };
+            }
+        });
+        Ok(Self { shutdown })
+    }
+}
+
+async fn send_msg(producer: &mut Producer<TokioExecutor>, msg: LogRecord) -> Result<(),PulsarError> {
+    producer
+        .send_non_blocking(msg).await?.await.map(|_| ())
+}
+
+#[rocket::async_trait]
+impl Fairing for BackgroundLogger {
+    fn info(&self) -> Info {
+        Info {
+            name: "Shutdown Handler",
+            kind: Kind::Shutdown,
+        }
+    }
+
+    async fn on_shutdown(&self, _rocket: &Rocket<Orbit>) {
+        println!("Server shutting down, notifying background thread...");
+        self.shutdown.store(true, Ordering::Relaxed);
+    }
+}
+
 pub struct QueueAppender {
     host: String,
-    log_sender: Sender<LogRecord>,
+    log_sender: UnboundedSender<LogRecord>,
     id_counter: IdCounter,
 }
 
 impl QueueAppender {
-    // pub async fn build(broker: String, topic_name: String) -> Result<Self,PulsarError> {
-    //     let host = gethostname().into_string()
-    //     .map_err(|e| PulsarError::Custom(format!("Failed to retrieve hostname from underlying system: {:#?}", e)))?;
-    //     let (tx, rx) = channel();
-    //     let addr = format!("pulsar://{}",broker);
-    //     producer_thread(addr, topic_name, host.clone(), rx).await?;
-    //     Ok(Self {
-    //         host,
-    //         log_sender: tx,
-    //         id_counter: IdCounter::new(),
-    //     })
-    // }
-    pub fn build(broker: String, topic_name: String) -> Result<Self,PulsarError> {
-        let host = gethostname().into_string()
-        .map_err(|e| PulsarError::Custom(format!("Failed to retrieve hostname from underlying system: {:#?}", e)))?;
-        let (tx, rx) = channel();
-        let addr = format!("pulsar://{}",broker);
-        let rt = tokio::runtime::Builder::new_current_thread()
-            .enable_all()
-            .build()
-            .map_err(|e| PulsarError::Custom(format!("Failed to open new async runtime: {}", e.to_string())))?;
-        let mut producer = rt.block_on(create_producer(addr,topic_name,host.clone()))?;
-        thread::spawn(move || {
-            while let Ok(msg) = rx.recv() {
-                match rt.block_on({
-                    producer
-                    .send_non_blocking(msg)
-                }) {
-                    Ok(v) => match rt.block_on(v) {
-                        Ok(_) => (),
-                        Err(e) => {
-                            eprintln!("Message not received: {}",e.to_string());
-                            continue;
-                        }
-                    },
-                    Err(e) => {
-                        eprintln!("Failed to send message to Pulsar: {}",e.to_string());
-                        continue;
-                    },
-                }
-            }
-        });
-        Ok(Self {
+    pub fn new(host: String, tx: UnboundedSender<LogRecord>) -> Self {
+        Self {
             host,
             log_sender: tx,
             id_counter: IdCounter::new(),
-        })
+        }
     }
-    fn log_to_pulsar(&self, log: LogRecord) {
+    async fn log_to_pulsar(&self, log: LogRecord) {
         let tx = self.log_sender.clone();
         tx.send(log).unwrap_or_else(|e| 
             eprintln!("Failed to send message to internal receiver: {}", e.to_string()));
     }
 }
-// async fn producer_thread(addr: String, topic: String, host: String, rx: Receiver<LogRecord>) -> Result<(),PulsarError> {
-//     let (statustx, statusrx) = channel();
-//     tokio::spawn(async move {
-//         let mut producer = match create_producer(addr,topic,host).await {
-//             Ok(v) => {
-//                 statustx.send(Ok(())).expect("Pulsar worker disconnected, kill process");
-//                 v             
-//             },
-//             Err(e) => {
-//                 statustx.send(Err(e)).expect("Pulsar worker disconnected, kill process");
-//                 return;
-//             },
-//         };
-//         while let Ok(msg) = rx.recv() {
-//             match producer
-//             .send_non_blocking(msg)
-//             .await {
-//                 Ok(v) => match v.await {
-//                     Ok(_) => (),
-//                     Err(e) => {
-//                         eprintln!("Message not received: {}",e.to_string());
-//                         continue;
-//                     }
-//                 },
-//                 Err(e) => {
-//                     eprintln!("Failed to send message to Pulsar: {}",e.to_string());
-//                     continue;
-//                 },
-//             }
-//         }
-//         println!("Closing log producer");
-//     });
-//     statusrx.recv().map_err(|e| PulsarError::Custom(e.to_string()))?
-// }
 
 async fn create_producer(addr: String, topic: String, host: String) -> Result<Producer<TokioExecutor>,PulsarError> {
     let pulsar: Pulsar<_> = Pulsar::builder(addr, TokioExecutor).build().await?;
@@ -227,13 +208,13 @@ impl Fairing for QueueAppender {
         let id = self.id_counter.get_id();
         request.local_cache(|| id);
         let record = LogRecord::new(id,get_time(),self.host.clone(),request,None);
-        self.log_to_pulsar(record);
+        self.log_to_pulsar(record).await;
     }
 
     async fn on_response<'r>(&self, request: &'r Request<'_>, response: &mut Response<'r>) {
         let id = *request.local_cache(|| 0);
         let record = LogRecord::new(id,get_time(),self.host.clone(),request,Some(response));
-        self.log_to_pulsar(record);
+        self.log_to_pulsar(record).await;
     }
 }
 

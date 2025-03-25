@@ -7,11 +7,13 @@ use rocket_db_pools::{Connection,Database};
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use tokio::io::AsyncRead;
 use std::env;
+use gethostname::gethostname;
+use tokio::sync::mpsc::unbounded_channel;
 
 mod fairing;
 mod response;
 mod backend;
-use fairing::QueueAppender;
+use fairing::{QueueAppender,BackgroundLogger};
 use backend::postgres::PostgresBackend;
 use response::{search,
     pdf_stream,
@@ -20,6 +22,7 @@ use response::{search,
     ServerError,
     Query,
     OllamaConfig};
+
 
 #[get("/")]
 async fn index() -> String {
@@ -41,8 +44,8 @@ async fn keyword_search(db: Connection<PostgresBackend>, input: Json<Query<'_>>)
     Ok(Json(search(db, input.query, None).await.map_err(|e| ServerError::new(e.to_string()))?))
 }
 
-#[launch]
-fn rocket() -> _ {
+#[rocket::main]
+async fn main() -> Result<(), rocket::Error> {
     // Postgres connection parameters
     let pg_user = env::var("BACKEND_USER").unwrap_or("postgres".to_string());
     let pg_pass = env::var("BACKEND_PASS").unwrap_or("admin".to_string());
@@ -81,7 +84,14 @@ fn rocket() -> _ {
         )
         .allow_credentials(true);
     let ollama_con = OllamaConfig::new(format!("{ollama_proto}://{ollama_host}:{ollama_port}"),ollama_model);
-    let pulsar_appender = QueueAppender::build(broker,topic).unwrap();
+    let host = gethostname().into_string().expect("Could not retrieve hostname from underlying system");
+    let (tx, rx) = unbounded_channel();
+
+
+    let pulsar_appender = QueueAppender::new(host.clone(),tx);
+    let log_background =  BackgroundLogger::build(broker,topic,host,rx).await.expect("Could not start background logging thread");
+
+
     rocket::custom(figment)
     //rocket::build()
     .mount("/", routes![index,semantic_search,keyword_search,get_pdf])
@@ -89,6 +99,9 @@ fn rocket() -> _ {
     .attach(PostgresBackend::init())
     .attach(cors.to_cors().unwrap())
     .attach(pulsar_appender)
+    .attach(log_background)
+    .launch().await?;
+    Ok(())
 }
 
 #[cfg(test)]
