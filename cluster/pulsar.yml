@@ -64,9 +64,9 @@ spec:
           apk add curl --no-cache
           curl -X PUT "${PULSAR_URL}/admin/v2/persistent/public/default/search_log"
           curl -v -X POST "${PULSAR_URL}/admin/v3/sinks/public/default/postgres-sink" -H "Expect:" \
-          -F "sinkConfig={\"tenant\": \"public\",\"namespace\": \"default\",\"name\": \"postgres-sink\",\"inputs\": [\"search_log\"],\"configs\": {\"jdbcUrl\": \"jdbc:postgresql://pdf-service:5432/logs\",\"tableName\": \"search_requests\",\"userName\": \"log_writer\",\"password\": \"test_password\"}};type=application/json" \
+          -F "sinkConfig={\"tenant\": \"public\",\"namespace\": \"default\",\"name\": \"postgres-sink\",\"inputs\": [\"search_log\"],\"configs\": {\"jdbcUrl\": \"jdbc:postgresql://pdf-service:5432/logs\",\"tableName\": \"search_requests_raw\",\"userName\": \"log_writer\",\"password\": \"test_password\"}};type=application/json" \
           -F "data=@/pulsar/connectors/pulsar-io-jdbc-postgres-4.0.3.nar" || exit 1
-          curl -v "${PULSAR_URL}/admin/v2/schemas/public/default/search_log/schema" -H "Content-Type: application/json" -d '{"type": "object","properties": {"id": { "type": "integer" },"action_time": { "type": "string", "format": "date-time" },"host": { "type": "string" },"remote": { "type": "string" },"method": { "type": "string" },"route": { "type": "string" },"request_headers": { "type": "string" },"status": { "type": "string", "nullable": true },"response_headers": { "type": "string", "nullable": true }},"required": ["id", "action_time", "host", "remote", "method", "route", "request_headers"]}' || exit 1
+#          curl -v "${PULSAR_URL}/admin/v2/schemas/public/default/search_log/schema" -H "Content-Type: application/json" -d '{"type": "object","properties": {"id": { "type": "integer" },"action_time": { "type": "string", "format": "date-time" },"host": { "type": "string" },"remote": { "type": "string" },"method": { "type": "string" },"route": { "type": "string" },"request_headers": { "type": "string" },"status": { "type": "string", "nullable": true },"response_headers": { "type": "string", "nullable": true }},"required": ["id", "action_time", "host", "remote", "method", "route", "request_headers"]}' || exit 1
         volumeMounts:
         - name: postgres-sink
           mountPath: /pulsar/connectors/pulsar-io-jdbc-postgres-4.0.3.nar

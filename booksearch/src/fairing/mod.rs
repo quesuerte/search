@@ -187,7 +187,7 @@ impl SerializeMessage for LogRecord {
         Ok(producer::Message {
             payload,
             // This is necessary for the underlying sink to be able to retrieve the correct schema to parse the input
-            schema_version: Some(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04]),
+            schema_version: Some(vec![0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]),
             ..Default::default()
         })
     }
