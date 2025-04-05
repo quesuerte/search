@@ -12,11 +12,9 @@ use tokio_util::compat::FuturesAsyncReadCompatExt;
 use futures::stream::TryStreamExt;
 use tokio::io::AsyncRead;
 
-// 1. Define a struct to hold your custom configuration value
 pub struct OllamaConfig {
     url: String,
     model: String,
-    // Add any other config values you need
 }
 
 impl OllamaConfig {
@@ -105,9 +103,9 @@ enum Rank {
     Semantic(f64),
 }
 
-pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Option<&OllamaConfig>) -> Result<QueryResponse,sqlx::Error> {
+pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Option<&OllamaConfig>) -> Result<QueryResponse,ServerError> {
     let rows = backend_search(db, query, semantic).await
-    .map_err(|e| sqlx::Error::Io(std::io::Error::new(std::io::ErrorKind::Other, e)))?;
+    .map_err(|e| ServerError::new(e.to_string()))?;
     let mut results = Vec::new();
     for row in rows {
         let id: String = row.get("id");
@@ -119,7 +117,7 @@ pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Opti
             Ok(rank_f32) => Rank::Keyword(rank_f32 as f32), // Convert to i32
             Err(_) => match row.try_get::<f64, &str>("rank") { // If i64 fails, try f64
                 Ok(rank_f64) => Rank::Semantic(rank_f64 as f64), // Convert to f32
-                Err(e) => return Err(sqlx::Error::TypeNotFound{ type_name: format!("Could not parse rank column into i32 or f64: {}", e.to_string())})
+                Err(e) => return Err(ServerError::new(format!("Could not parse rank column into i32 or f64: {}", e.to_string())))
             }
         };
         results.push(RowResponse{id,page,title,author,summary,rank});
@@ -127,13 +125,14 @@ pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Opti
     Ok(QueryResponse{results})
 }
 
-pub async fn pdf_stream<'r>(db: Connection<PostgresBackend>, id: &str) -> Result<PdfStreamResponse<Box<dyn AsyncRead + Unpin + Send>>, std::io::Error> {
+pub async fn pdf_stream<'r>(db: Connection<PostgresBackend>, id: &str, client_ip: String) -> Result<PdfStreamResponse<Box<dyn AsyncRead + Unpin + Send>>, ServerError> {
     let file_url = get_pdf_uri(db, id).await
-    .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?; // Replace with your actual file URL
+    .map_err(|e| ServerError::new(e.to_string()))?; // Replace with your actual file URL
 
-    let download = reqwest::get(file_url)
-        .await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))? // await server response
-        .error_for_status().map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?; // generate an error if server didn't respond OK
+    let client = reqwest::Client::new();
+    let download = client.get(file_url).header("X-Forwarded-For", client_ip).send()
+        .await.map_err(|e| ServerError::new(e.to_string()))? // await server response
+        .error_for_status().map_err(|e| ServerError::new(e.to_string()))?; // generate an error if server didn't respond OK
     
     let async_read_stream = download
     .bytes_stream()

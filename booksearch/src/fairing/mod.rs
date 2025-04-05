@@ -8,7 +8,6 @@ use rocket::{Data, Request, Response, Rocket, Orbit};
 use rocket::fairing::{Fairing, Info, Kind};
 use serde::Serialize;
 
-
 struct IdCounter {
     count: AtomicU32,
 }

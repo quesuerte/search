@@ -1,12 +1,9 @@
 #[macro_use] extern crate rocket;
-use rocket::{http::Method,
-            serde::json::Json,
-            figment::{value::{Map, Value}, 
-            util::map}};
+use rocket::{figment::{util::map, value::{Map, Value}}, http::Method, serde::json::Json};
 use rocket_db_pools::{Connection,Database};
 use rocket_cors::{AllowedOrigins, CorsOptions};
 use tokio::io::AsyncRead;
-use std::env;
+use std::{env,net::IpAddr};
 use gethostname::gethostname;
 use tokio::sync::mpsc::unbounded_channel;
 
@@ -30,18 +27,18 @@ async fn index() -> String {
 }
 
 #[get("/pdf/<id>")]
-async fn get_pdf<'r>(db: Connection<PostgresBackend>, id: &str) -> Result<PdfStreamResponse<Box<dyn AsyncRead + Unpin + Send>>,ServerError> {
-    Ok(pdf_stream(db, id).await.map_err(|e| ServerError::new(e.to_string()))?)
+async fn get_pdf(db: Connection<PostgresBackend>, id: &str, client_ip: IpAddr) -> Result<PdfStreamResponse<Box<dyn AsyncRead + Unpin + Send>>,ServerError> {
+    Ok(pdf_stream(db, id, client_ip.to_string()).await?)
 }
 
 #[post("/semantic", format = "application/json", data = "<input>")]
 async fn semantic_search(db: Connection<PostgresBackend>, ollama: &OllamaConfig, input: Json<Query<'_>>) -> Result<Json<QueryResponse>,ServerError> {
-    Ok(Json(search(db, input.query, Some(ollama)).await.map_err(|e| ServerError::new(e.to_string()))?))
+    Ok(Json(search(db, input.query, Some(ollama)).await?))
 }
 
 #[post("/keyword", format = "application/json", data = "<input>")]
 async fn keyword_search(db: Connection<PostgresBackend>, input: Json<Query<'_>>) -> Result<Json<QueryResponse>,ServerError> {
-    Ok(Json(search(db, input.query, None).await.map_err(|e| ServerError::new(e.to_string()))?))
+    Ok(Json(search(db, input.query, None).await?))
 }
 
 #[rocket::main]
@@ -51,7 +48,7 @@ async fn main() -> Result<(), rocket::Error> {
     let pg_pass = env::var("BACKEND_PASS").unwrap_or("admin".to_string());
     let pg_host = env::var("BACKEND_HOST").unwrap_or("localhost".to_string());
     let pg_port: i32 = env::var("BACKEND_PORT").unwrap_or(5432.to_string()).parse().unwrap();
-    let pg_db = env::var("BACKEND_DB").unwrap_or("postgres".to_string());
+    let pg_db = env::var("BACKEND_DB").unwrap_or("search".to_string());
     let pg_pool_size: i32 = env::var("BACKEND_POOL_SIZE").unwrap_or(10.to_string()).parse().unwrap();
     let pg_pool_timeout: i32 = env::var("BACKEND_POOL_TIMEOUT").unwrap_or(5.to_string()).parse().unwrap();
 
@@ -77,7 +74,7 @@ async fn main() -> Result<(), rocket::Error> {
     let cors = CorsOptions::default()
         .allowed_origins(AllowedOrigins::all())
         .allowed_methods(
-            vec![Method::Get, Method::Post, Method::Patch]
+            vec![Method::Get, Method::Post]
                 .into_iter()
                 .map(From::from)
                 .collect(),
@@ -127,7 +124,7 @@ mod tests {
         
 
         let pg_port = 5432;
-        let pg_con_future = GenericImage::new("pgvector/pgvector", "pg17")
+        let pg_con_future = GenericImage::new("timescale/timescaledb", "latest-pg17")
             .with_wait_for(WaitFor::Duration { length: Duration::from_secs(20) })
             .with_exposed_port(pg_port.tcp())
             .with_env_var("POSTGRES_PASSWORD", "admin")
