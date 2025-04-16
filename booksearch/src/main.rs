@@ -82,22 +82,28 @@ async fn main() -> Result<(), rocket::Error> {
         .allow_credentials(true);
     let ollama_con = OllamaConfig::new(format!("{ollama_proto}://{ollama_host}:{ollama_port}"),ollama_model);
     let host = gethostname().into_string().expect("Could not retrieve hostname from underlying system");
+
+    // Pulsar configuration, if pulsar is available
     let (tx, rx) = unbounded_channel();
-
-
     let pulsar_appender = QueueAppender::new(host.clone(),tx);
-    let log_background =  BackgroundLogger::build(broker,topic,host,rx).await.expect("Could not start background logging thread");
+    let log_background_result =  BackgroundLogger::build(broker,topic,host,rx).await;
 
-
-    rocket::custom(figment)
-    //rocket::build()
+    let rocket_config = rocket::custom(figment)
     .mount("/", routes![index,semantic_search,keyword_search,get_pdf])
     .manage(ollama_con)
     .attach(PostgresBackend::init())
-    .attach(cors.to_cors().unwrap())
-    .attach(pulsar_appender)
-    .attach(log_background)
-    .launch().await?;
+    .attach(cors.to_cors().unwrap());
+    match log_background_result {
+        Ok(log_background) => {
+            rocket_config.attach(pulsar_appender)
+            .attach(log_background).launch().await?;
+        },
+        Err(e) => {
+            eprintln!("Could not connect to Pulsar ({e}), starting without Pulsar appender");
+            rocket_config.launch().await?;
+        }
+    }
+    
     Ok(())
 }
 
