@@ -10,7 +10,7 @@ export async function backendSearch(searchTerm, isSemantic) {
     };
     const path = isSemantic ? 'semantic' : 'keyword'
     // Replace with your actual API endpoint
-    const response = await fetch(`http://localhost:8000/${path}`,options);
+    const response = await fetch(`https://search.carsonblinn.com/${path}`,options);
     //const response = await fetch('http://localhost:8000/keyword',options);
     
     if (!response.ok) {

@@ -32,6 +32,7 @@ function PDFReader() {
   }*/
   
   const location = useLocation();
+  const title = location.state;
   const { documentId } = useParams();
   /*const [searchParams] = useSearchParams();*/
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -100,7 +101,7 @@ function PDFReader() {
           ← Back to Search
         </Link>
         <div className="document-info">
-            <h2>{documentId}</h2>
+            <h2>{title}</h2>
           </div>
       </div>
 

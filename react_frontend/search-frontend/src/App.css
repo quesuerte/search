@@ -94,7 +94,7 @@
   border-radius: 4px;
   transition: transform 0.2s, box-shadow 0.2s;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
 }
 
 .result-item:hover {
@@ -110,12 +110,6 @@
   padding: 15px;
 }
 
-.result-right {
-  flex: 1;
-  padding: 15px;
-  border-left: 1px solid #eee;
-}
-
 .doc-title {
   margin-top: 0;
   color: #4a90e2;
@@ -124,6 +118,33 @@
 .match-context {
   font-style: italic;
   color: #666;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.expanded-content {
+  display: flex;
+  flex-direction: row;
+  gap: 8px;
+  width: 100%;
+  border-top: 1px solid #eee;
+}
+
+.expand-left {
+  flex: 0 0 25%;
+  padding: 15px;
+  padding-right: 0px;
+}
+
+.expand-right {
+  flex: 1;
+  padding: 15px;
+  border-left: 1px solid #eee;
 }
 
 /* PDF Reader styles */

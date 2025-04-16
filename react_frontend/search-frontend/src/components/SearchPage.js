@@ -4,65 +4,65 @@ import SearchResults from './SearchResults';
 import { backendSearch } from '../api/api';
 
 function SearchPage() {
-  const [primaryResults, setPrimaryResults] = useState([]);
-  const [secondaryResults, setSecondaryResults] = useState([]);
-  const [loadingPrimary, setLoadingPrimary] = useState(false);
-  const [loadingSecondary, setLoadingSecondary] = useState(false);
-  const [errorPrimary, setErrorPrimary] = useState(null);
-  const [errorSecondary, setErrorSecondary] = useState(null);
+  const [keywordResults, setkeywordResults] = useState([]);
+  const [semanticResults, setsemanticResults] = useState([]);
+  const [loadingKeyword, setloadingKeyword] = useState(false);
+  const [loadingSemantic, setloadingSemantic] = useState(false);
+  const [ErrorKeyword, setErrorKeyword] = useState(null);
+  const [ErrorSemantic, setErrorSemantic] = useState(null);
   const [firstLoad, setFirstLoad] = useState(true);
 
   const handleSearch = async (searchTerm) => {
     setFirstLoad(false);
-    setPrimaryResults([]);
-    setSecondaryResults([]);
-    setErrorPrimary(null);
-    setErrorSecondary(null);
-    setLoadingPrimary(true);
-    setLoadingSecondary(true);
+    setkeywordResults([]);
+    setsemanticResults([]);
+    setErrorKeyword(null);
+    setErrorSemantic(null);
+    setloadingKeyword(true);
+    setloadingSemantic(true);
     // Start primary search
     backendSearch(searchTerm, false)
-      .then(res => setPrimaryResults(res.results || []))
+      .then(res => setkeywordResults(res.results || []))
       .catch(err => {
-        console.error('Primary search error:', err);
-        setErrorPrimary('Primary search failed.');
+        console.error('Keyword search error:', err);
+        setErrorKeyword('Keyword search failed.');
       })
-      .finally(() => setLoadingPrimary(false));
+      .finally(() => setloadingKeyword(false));
 
     // Start secondary search
     backendSearch(searchTerm, true)
-      .then(res => setSecondaryResults(res.results || []))
+      .then(res => setsemanticResults(res.results || []))
       .catch(err => {
-        console.error('Secondary search error:', err);
-        setErrorSecondary('Secondary search failed.');
+        console.error('Semantic search error:', err);
+        setErrorSemantic('Semantic search failed.');
       })
-      .finally(() => setLoadingSecondary(false));
+      .finally(() => setloadingSemantic(false));
   };
 
   return (
-    <div className="search-page p-4">
+    <div className="search-page">
       <SearchBar onSearch={handleSearch} />
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-        <div className="w-full">
-          {loadingPrimary && <div className="loading">Loading results...</div>}
-          {errorPrimary && <div className="error-message">{errorPrimary}</div>}
-          {!loadingPrimary && !errorPrimary && !firstLoad && primaryResults.length === 0 && (
-            <div className="no-results">No primary results found.</div>
+      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', marginTop: '20px' }}>
+        <div style={{ flex: '1', minWidth: '0' }}>
+          {loadingKeyword && <div className="loading">Loading results...</div>}
+          {ErrorKeyword && <div className="error-message">{ErrorKeyword}</div>}
+          {!loadingKeyword && !ErrorKeyword && !firstLoad && keywordResults.length === 0 && (
+            <div className="no-results">No keyword results found.</div>
           )}
-          {!loadingPrimary && primaryResults.length > 0 && (
-            <SearchResults results={primaryResults} isSemantic={false} />
+          {!loadingKeyword && keywordResults.length > 0 && (
+            <SearchResults results={keywordResults} isSemantic={false} />
           )}
         </div>
 
-        <div className="w-full">
-          {loadingSecondary && <div className="loading">Loading results...</div>}
-          {errorSecondary && <div className="error-message">{errorSecondary}</div>}
-          {!loadingSecondary && !errorSecondary && !firstLoad && secondaryResults.length === 0 && (
-            <div className="no-results">No secondary results found.</div>
+        <div style={{ flex: '1', minWidth: '0' }}>
+          {loadingSemantic && <div className="loading">Loading results...</div>}
+          {ErrorSemantic && <div className="error-message">{ErrorSemantic}</div>}
+          {!loadingSemantic && !ErrorSemantic && !firstLoad && semanticResults.length === 0 && (
+            <div className="no-results">No semantic results found.</div>
           )}
-          {!loadingSecondary && secondaryResults.length > 0 && (
-            <SearchResults results={secondaryResults} isSemantic={true} />
+          {!loadingSemantic && semanticResults.length > 0 && (
+            <SearchResults results={semanticResults} isSemantic={true} />
           )}
         </div>
       </div>
