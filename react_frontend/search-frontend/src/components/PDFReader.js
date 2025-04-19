@@ -10,6 +10,7 @@ import "pdfjs-dist/build/pdf.worker.mjs";
 import '../App.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import { MinusIcon, PlusIcon } from 'lucide-react';
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
@@ -32,7 +33,7 @@ function PDFReader() {
   }*/
   
   const location = useLocation();
-  const title = location.state;
+  const title = location.state.title;
   const { documentId } = useParams();
   /*const [searchParams] = useSearchParams();*/
   const [pdfUrl, setPdfUrl] = useState(null);
@@ -42,6 +43,20 @@ function PDFReader() {
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
   
+  const [isMobile, setIsMobile] = useState(false);
+  // Set isOpen based on screen width
+  useEffect(() => {
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 768;
+      setIsMobile(!isDesktop)
+    };
+
+    handleResize(); // Call once on mount
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   useEffect(() => {
     const loadDocument = async () => {
       try {
@@ -93,16 +108,26 @@ function PDFReader() {
   const zoomOut = () => {
     setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
   };
-
+  /* text-overflow: ellipsis; */
   return (
     <div className="pdf-reader">
       <div className="pdf-header">
         <Link to="/" className="back-button">
-          ← Back to Search
+          {isMobile ? '←' : '← Back to Search'}
         </Link>
-        <div className="document-info">
-            <h2>{title}</h2>
-          </div>
+        <div className="document-info" style={
+          isMobile 
+          ? { 
+              fontSize: '8px', 
+              /*whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              maxWidth: '100%' */
+            } 
+          : undefined}
+        >
+          <h2>{title}</h2>
+        </div>
       </div>
 
       {isLoading && <div className="loading">Loading document...</div>}
@@ -117,16 +142,16 @@ function PDFReader() {
                 Previous
               </button>
               <span>
-                Page {pageNumber} of {numPages}
+                {pageNumber} / {numPages}
               </span>
               <button onClick={goToNextPage} disabled={pageNumber >= numPages}>
                 Next
               </button>
             </div>
             
-            <div className="zoom-controls">
-              <button onClick={zoomOut}>Zoom Out</button>
-              <button onClick={zoomIn}>Zoom In</button>
+            <div className="zoom-controls" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+              <MinusIcon onClick={zoomOut}/>
+              <PlusIcon onClick={zoomIn}/>
             </div>
           </div>
 

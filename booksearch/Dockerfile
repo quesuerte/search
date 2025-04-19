@@ -10,7 +10,7 @@
 
 FROM rust:alpine as builder
 
-RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static
+RUN apk add --no-cache musl-dev openssl-dev openssl-libs-static protoc
 
 # statically link against openssl
 ENV OPENSSL_STATIC=1 
@@ -21,7 +21,7 @@ RUN cargo build --release --verbose
 
 
 FROM alpine:latest
-RUN apk add --no-cache openssl ca-certificates
+RUN apk add --no-cache openssl ca-certificates protoc
 RUN addgroup -S search && adduser -S -G search search
 COPY --from=builder --chown=search:search /opt/target/release/booksearch /opt/booksearch
 WORKDIR /opt

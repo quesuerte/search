@@ -29,9 +29,10 @@ body {
   body {
     /* The file size of this background image is 93% smaller
      * to improve page load speed on mobile internet connections */
-    background-image: url(website_background_mobile.webp);
+    /* background-image: url(website_background_mobile.webp); */
+    background-image: none;
   }
-	}
+}
 
 /*body {
   margin: 0;

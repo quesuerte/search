@@ -43,7 +43,7 @@ function SearchPage() {
     <div className="search-page">
       <SearchBar onSearch={handleSearch} />
 
-      <div style={{ display: 'flex', flexDirection: 'row', gap: '20px', width: '100%', marginTop: '20px' }}>
+      <div className="responsive-stack">
         <div style={{ flex: '1', minWidth: '0' }}>
           {loadingKeyword && <div className="loading">Loading results...</div>}
           {ErrorKeyword && <div className="error-message">{ErrorKeyword}</div>}
