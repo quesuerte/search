@@ -1,11 +1,9 @@
-import React, { /*useCallback,*/ useEffect, useState } from 'react';
+import React, { /*useCallback,*/ useEffect, useState} from 'react';
 import { useLocation, useParams, /*useSearchParams,*/ Link } from 'react-router-dom';
 import { Document, Page } from 'react-pdf';
 import { fetchPDF } from '../api/api';
 import * as pdfjs from 'pdfjs-dist'
 import "pdfjs-dist/build/pdf.worker.mjs";
-//import pdfjsWorker from "react-pdf/node_modules/pdfjs-dist/build/pdf.worker.entry";
-//import 'pdfjs-dist/webpack';
 
 import '../App.css'
 import 'react-pdf/dist/Page/AnnotationLayer.css';
@@ -15,7 +13,10 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
   'pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString();
+import { useSpring, animated } from '@react-spring/web'
+import { createUseGesture, dragAction, pinchAction } from '@use-gesture/react'
 
+const useGesture = createUseGesture([dragAction, pinchAction])
 
 function PDFReader() {
   /*const [searchText, setSearchText] = useState('');*/
@@ -44,19 +45,6 @@ function PDFReader() {
   const [scale, setScale] = useState(1.0);
   
   const [isMobile, setIsMobile] = useState(false);
-  // Set isOpen based on screen width
-  useEffect(() => {
-    const handleResize = () => {
-      const isDesktop = window.innerWidth >= 768;
-      setIsMobile(!isDesktop)
-    };
-
-    handleResize(); // Call once on mount
-    window.addEventListener('resize', handleResize);
-
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
   useEffect(() => {
     const loadDocument = async () => {
       try {
@@ -76,6 +64,38 @@ function PDFReader() {
         setIsLoading(false);
       }
     };
+    const handler = (e) => e.preventDefault()
+    const handleResize = () => {
+      const isDesktop = window.innerWidth >= 768;
+      setIsMobile(!isDesktop)
+    };
+    const handleKeyDown = (e) => {
+      // Normalize zoom keys
+      if (e.key === '=' || e.key === '+') {
+        e.preventDefault();
+        zoomIn();
+      } else if (e.key === '-') {
+        e.preventDefault();
+        zoomOut();
+      } else if (e.key === '0') {
+        e.preventDefault();
+        setScale(1.0);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        goToPrevPage();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        goToNextPage();
+      }
+    };
+  
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('gesturestart', handler)
+    document.addEventListener('gesturechange', handler)
+    document.addEventListener('gestureend', handler)
+
+    handleResize(); // Call once on mount
+    window.addEventListener('resize', handleResize);
 
     loadDocument();
 
@@ -84,6 +104,11 @@ function PDFReader() {
       if (pdfUrl) {
         URL.revokeObjectURL(pdfUrl);
       }
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('gesturestart', handler)
+      document.removeEventListener('gesturechange', handler)
+      document.removeEventListener('gestureend', handler)
     };
   }, [documentId]);
 
@@ -101,13 +126,74 @@ function PDFReader() {
     setPageNumber((prevPageNumber) => Math.min(prevPageNumber + 1, numPages));
   };
 
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 2.5;
+
   const zoomIn = () => {
-    setScale((prevScale) => Math.min(prevScale + 0.2, 2.5));
+    setScale((prevScale) => Math.min(prevScale + 0.2, MAX_SCALE));
   };
 
   const zoomOut = () => {
-    setScale((prevScale) => Math.max(prevScale - 0.2, 0.5));
+    setScale((prevScale) => Math.max(prevScale - 0.2, MIN_SCALE));
   };
+
+  const [style, api] = useSpring(() => ({
+    x: 0,
+    y: 0,
+    scale: 1,
+  }))
+  const ref = React.useRef(null)
+
+  useGesture(
+    {
+      // onHover: ({ active, event }) => console.log('hover', event, active),
+      // onMove: ({ event }) => console.log('move', event),
+      onDrag: ({ active, pinching, cancel, movement: [mx], direction: [xDir], offset: [x, y], ...rest }) => {
+        if (pinching) return cancel()
+        // This is not working correctly
+        // if (active && Math.abs(mx) > window.innerWidth / 2) {
+        //   if (xDir > 0) {
+        //     goToPrevPage()
+        //   } else {
+        //     goToNextPage()
+        //   }
+        //   api.start({ x: 0, y: 0, scale: 1 })
+        //   return cancel()
+        // }
+        api.start({ x, y })
+      },
+      onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, _], memo }) => {
+        if (!ref.current) {
+          return
+        }
+        if (first) {
+          const { width, height, x, y } = ref.current.getBoundingClientRect()
+          const tx = ox - (x + width / 2)
+          const ty = oy - (y + height / 2)
+          memo = [style.x.get(), style.y.get(), tx, ty]
+        }
+
+        const x = memo[0] - (ms - 1) * memo[2]
+        const y = memo[1] - (ms - 1) * memo[3]
+        // This seems to break scaling
+        // if (s < MIN_SCALE) {
+        //   setScale(MIN_SCALE)
+        // } else if (s > MAX_SCALE) {
+        //   setScale(MAX_SCALE)
+        // } else {
+        //   setScale(s ?? 1)
+        // }
+        api.start({ scale: s, x, y })
+        return memo
+      },
+    },
+    {
+      target: ref,
+      drag: { from: () => [style.x.get(), style.y.get()] },
+      pinch: { scaleBounds: { min: MIN_SCALE, max: MAX_SCALE }, rubberband: true },
+    }
+  )
+
   /* text-overflow: ellipsis; */
   return (
     <div className="pdf-reader">
@@ -136,7 +222,7 @@ function PDFReader() {
 
       {!isLoading && !error && pdfUrl && (
         <div className="pdf-container">
-          <div className="pdf-controls">
+          <div className="pdf-controls" style={{display: isMobile ? 'none' : 'flex'}}>
             <div className="page-navigation">
               <button onClick={goToPrevPage} disabled={pageNumber <= 1}>
                 Previous
@@ -149,7 +235,7 @@ function PDFReader() {
               </button>
             </div>
             
-            <div className="zoom-controls" style={{display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between'}}>
+            <div className="zoom-controls">
               <MinusIcon onClick={zoomOut}/>
               <PlusIcon onClick={zoomIn}/>
             </div>
@@ -163,6 +249,7 @@ function PDFReader() {
               error={<div>Failed to load PDF</div>}
               loading={<div>Loading PDF...</div>}
             >
+              { isMobile ? (<animated.div ref={ref} style={{...style, touchAction: 'none'}}>
               <Page
                 pageNumber={pageNumber}
                 scale={scale}
@@ -170,6 +257,13 @@ function PDFReader() {
                 renderAnnotationLayer={true}
                 /*customTextRenderer={textRenderer}*/
               />
+              </animated.div>) : (<Page
+                pageNumber={pageNumber}
+                scale={scale}
+                renderTextLayer={true}
+                renderAnnotationLayer={true}
+                /*customTextRenderer={textRenderer}*/
+              />)}
             </Document>
           </div>
         </div>
