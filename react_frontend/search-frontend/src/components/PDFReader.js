@@ -43,8 +43,10 @@ function PDFReader() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [scale, setScale] = useState(1.0);
-  
   const [isMobile, setIsMobile] = useState(false);
+  //const [dragBounds, setDragBounds] = useState({ left: 0, right: 0, top: 0, bottom: 0 });
+  const pdfcontainer = React.useRef(null);
+
   useEffect(() => {
     const loadDocument = async () => {
       try {
@@ -68,6 +70,7 @@ function PDFReader() {
     const handleResize = () => {
       const isDesktop = window.innerWidth >= 768;
       setIsMobile(!isDesktop)
+      //updateBounds()
     };
     const handleKeyDown = (e) => {
       // Normalize zoom keys
@@ -88,6 +91,25 @@ function PDFReader() {
         goToNextPage();
       }
     };
+
+    // const updateBounds = () => {
+    //   if (!ref.current) return;
+  
+    //   const container = pdfcontainer.current
+    //   if (!container) return;
+  
+    //   const containerRect = container.getBoundingClientRect();
+    //   const contentRect = ref.current.getBoundingClientRect();
+  
+    //   const maxX = Math.max(0, (contentRect.width - containerRect.width) / 2);
+    //   const maxY = Math.max(0, (contentRect.height - containerRect.height) / 2);
+    //   setDragBounds({
+    //     left: -maxX,
+    //     right: maxX,
+    //     top: -maxY,
+    //     bottom: maxY,
+    //   });
+    // };
   
     window.addEventListener('keydown', handleKeyDown);
     document.addEventListener('gesturestart', handler)
@@ -141,28 +163,42 @@ function PDFReader() {
     x: 0,
     y: 0,
     scale: 1,
+    config: { tension: 250, friction: 30 },
   }))
   const ref = React.useRef(null)
+
+  // Variables involved with swiping
+  const VELOCITY_TRIGGER = 0.5;
+  const flipped = React.useRef(false)
 
   useGesture(
     {
       // onHover: ({ active, event }) => console.log('hover', event, active),
       // onMove: ({ event }) => console.log('move', event),
-      onDrag: ({ active, pinching, cancel, movement: [mx], direction: [xDir], offset: [x, y], ...rest }) => {
+      onDrag: ({ active, pinching, cancel, last, direction: [xDir], offset: [x, y], velocity: [vx] }) => {
         if (pinching) return cancel()
+        const trigger = vx > VELOCITY_TRIGGER
         // This is not working correctly
-        // if (active && Math.abs(mx) > window.innerWidth / 2) {
-        //   if (xDir > 0) {
-        //     goToPrevPage()
-        //   } else {
-        //     goToNextPage()
-        //   }
-        //   api.start({ x: 0, y: 0, scale: 1 })
-        //   return cancel()
-        // }
-        api.start({ x, y })
+        if (!active && trigger && !flipped.current) {
+          if (xDir > 0) {
+            goToPrevPage()
+          } else {
+            goToNextPage()
+          }
+          flipped.current = true
+          return cancel()
+        }
+        // Only apply visual drag if NOT a fling
+        if (vx < VELOCITY_TRIGGER) {
+          api.start({ x, y})
+        }
+
+        // Reset on gesture end
+        if (!active && last) {
+          flipped.current = false
+        }
       },
-      onPinch: ({ origin: [ox, oy], first, movement: [ms], offset: [s, _], memo }) => {
+      onPinch: ({ origin: [ox, oy], first, last, movement: [ms], offset: [s, _], memo }) => {
         if (!ref.current) {
           return
         }
@@ -175,13 +211,14 @@ function PDFReader() {
 
         const x = memo[0] - (ms - 1) * memo[2]
         const y = memo[1] - (ms - 1) * memo[3]
-        // This seems to break scaling
-        // if (s < MIN_SCALE) {
-        //   setScale(MIN_SCALE)
-        // } else if (s > MAX_SCALE) {
-        //   setScale(MAX_SCALE)
-        // } else {
-        //   setScale(s ?? 1)
+        // if (last) {
+        //   if (s < MIN_SCALE) {
+        //     setScale(MIN_SCALE)
+        //   } else if (s > MAX_SCALE) {
+        //     setScale(MAX_SCALE)
+        //   } else {
+        //     setScale(s)
+        //   }
         // }
         api.start({ scale: s, x, y })
         return memo
@@ -189,7 +226,7 @@ function PDFReader() {
     },
     {
       target: ref,
-      drag: { from: () => [style.x.get(), style.y.get()] },
+      drag: { from: () => [style.x.get(), style.y.get()], /* bounds: () => dragBounds */ },
       pinch: { scaleBounds: { min: MIN_SCALE, max: MAX_SCALE }, rubberband: true },
     }
   )
@@ -222,7 +259,13 @@ function PDFReader() {
 
       {!isLoading && !error && pdfUrl && (
         <div className="pdf-container">
-          <div className="pdf-controls" style={{display: isMobile ? 'none' : 'flex'}}>
+          {isMobile ? (<div className="pdf-controls">
+            <div className="page-navigation">
+              <span>
+                {pageNumber} / {numPages}
+              </span>
+            </div>
+          </div>) : (<div className="pdf-controls">
             <div className="page-navigation">
               <button onClick={goToPrevPage} disabled={pageNumber <= 1}>
                 Previous
@@ -239,9 +282,9 @@ function PDFReader() {
               <MinusIcon onClick={zoomOut}/>
               <PlusIcon onClick={zoomIn}/>
             </div>
-          </div>
+          </div>) }
 
-          <div className="pdf-document">
+          <div className="pdf-document" ref={pdfcontainer}>
             <Document
               file={pdfUrl}
               onItemClick={({ pageNumber }) => setPageNumber(pageNumber)}

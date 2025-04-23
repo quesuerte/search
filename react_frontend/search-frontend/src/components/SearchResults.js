@@ -43,8 +43,8 @@ function SearchResults({results, isSemantic}) {
       return newSet;
     });
   };
-  const docKey = (id, page) => {
-    return `${id}:${page}`;
+  const docKey = (id, index) => {
+    return `${id}:${index}`;
   }
   const parseAuthors = (authors) => {
     const expr = /\s*([^()]+)\s*\(([^)]+)\)\s*/g;
@@ -89,11 +89,11 @@ function SearchResults({results, isSemantic}) {
       </button>
       )}
       <ul className="results-list" style={{display: isOpen == null || isOpen ? 'block' : 'none'}}>
-        {results.map((doc) => {
-          const isExpanded = expandedIds.has(docKey(doc.id,doc.page));
+        {results.map((doc,index) => {
+          const isExpanded = expandedIds.has(docKey(doc.id,index));
           const title = doc.title;
           return (
-              <li key={docKey(doc.id,doc.page)} className="result-item">
+              <li key={docKey(doc.id,index)} className="result-item">
                 {/* Left: Title + Page */}
                 <div>
                   <div className="header-row">
@@ -105,7 +105,7 @@ function SearchResults({results, isSemantic}) {
                   <div className="header-row">
                     <button
                         className="expand-button"
-                        onClick={() => toggleExpand(docKey(doc.id,doc.page))}
+                        onClick={() => toggleExpand(docKey(doc.id,index))}
                       >
                       {isExpanded ? 'Hide details' : 'Show details'}
                     </button>

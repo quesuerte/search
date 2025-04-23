@@ -35,6 +35,7 @@
     z-index: 1;
     overflow: auto;
     touch-action: none;
+    max-height: 100dvh;
   }
   .background-image {
     position: fixed;        /* Fixed to the screen */
@@ -207,7 +208,6 @@
 .pdf-reader {
   display: flex;
   flex-direction: column;
-  height: 100vh;
 }
 
 .pdf-header {
