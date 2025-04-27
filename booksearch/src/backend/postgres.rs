@@ -14,12 +14,12 @@ pub async fn backend_search(mut db: Connection<PostgresBackend>, input: &str, se
     let limit = 5;
     // Embed query ...
     let query = match semantic.is_some() {
-        true => "SELECT a.id, a.page, b.uri, b.title, b.author, b.summary, a.embedding <=> $1 AS rank \
+        true => "SELECT a.id, b.source, a.page, b.uri, b.title, b.author, b.summary, a.embedding <=> $1 AS rank \
                 FROM semantic_search a \
                 INNER JOIN sources b ON a.id = b.id \
                 ORDER BY rank \
                 LIMIT $2",
-        false => "SELECT a.id, a.page, b.uri, b.title, b.author, b.summary, ts_rank(a.ts, websearch_to_tsquery('english', $1)) AS rank \
+        false => "SELECT a.id, b.source, a.page, b.uri, b.title, b.author, b.summary, ts_rank(a.ts, websearch_to_tsquery('english', $1)) AS rank \
                  FROM keyword_search a INNER JOIN sources b ON a.id = b.id \
                  WHERE a.ts @@ websearch_to_tsquery('english', $1 ) \
                  ORDER BY rank DESC LIMIT $2"

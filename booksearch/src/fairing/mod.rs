@@ -1,6 +1,6 @@
-use std::time::{SystemTime,UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
-use pulsar::{producer, proto, Error as PulsarError, Producer, Pulsar, SerializeMessage, TokioExecutor};
+use pulsar::{producer, proto, Error as PulsarError, Producer, Pulsar, SerializeMessage, TokioExecutor, ConnectionRetryOptions};
 use tokio::sync::mpsc::{UnboundedReceiver,UnboundedSender};
 use std::sync::Arc;
 use rocket::serde::json::serde_json;
@@ -104,7 +104,14 @@ impl QueueAppender {
 }
 
 async fn create_producer(addr: String, topic: String, host: String) -> Result<Producer<TokioExecutor>,PulsarError> {
-    let pulsar: Pulsar<_> = Pulsar::builder(addr, TokioExecutor).build().await?;
+    let connop = ConnectionRetryOptions {
+        min_backoff: Duration::from_millis(10),
+        max_backoff: Duration::from_secs(30),
+        max_retries: 1,
+        connection_timeout: Duration::from_secs(5),
+        keep_alive: Duration::from_secs(60),
+    };
+    let pulsar: Pulsar<_> = Pulsar::builder(addr, TokioExecutor).with_connection_retry_options(connop).build().await?;
     Ok(pulsar
         .producer()
         .with_topic(topic)

@@ -109,6 +109,7 @@ function SearchResults({results, isSemantic}) {
                       >
                       {isExpanded ? 'Hide details' : 'Show details'}
                     </button>
+                    <p><a href={doc.source} style={{color: '#4a90e2'}}>Source</a></p>
                     <p>Page: {doc.page + 1}</p>
                   </div>
                 </div>
