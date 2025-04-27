@@ -15,7 +15,7 @@ spec:
       hostname: postgres
       containers:
       - name: postgres-container
-        image: timescale/timescaledb:latest-pg17
+        image: timescale/timescaledb-ha:pg17
         env:
         - name: POSTGRES_PASSWORD
           value: admin
