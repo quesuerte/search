@@ -233,7 +233,7 @@ function PDFReader() {
 
   /* text-overflow: ellipsis; */
   return (
-    <div className="pdf-reader">
+    <div className="pdf-reader" style={{ touchAction: isMobile ? 'none' : 'auto' }}>
       <div className="pdf-header">
         <Link to="/" className="back-button">
           {isMobile ? '←' : '← Back to Search'}

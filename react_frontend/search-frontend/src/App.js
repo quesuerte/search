@@ -15,9 +15,6 @@ function App() {
       <div className="background-image">
         <div className="glass-panel">
           <div className="app-container">
-            <header className="app-header">
-              <h1>Document Search</h1>
-            </header>
             <main className="app-content">
               <Suspense fallback={<LoadingFallback />}>
                 <Routes>

@@ -41,6 +41,9 @@ function SearchPage() {
 
   return (
     <div className="search-page">
+      <header className="app-header">
+        <h1>Document Search</h1>
+      </header>
       <SearchBar onSearch={handleSearch} />
 
       <div className="responsive-stack">

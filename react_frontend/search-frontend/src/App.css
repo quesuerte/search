@@ -34,7 +34,7 @@
     width: 100%;
     z-index: 1;
     overflow: auto;
-    touch-action: none;
+    /* touch-action: none; */
     max-height: 100dvh;
   }
   .background-image {
