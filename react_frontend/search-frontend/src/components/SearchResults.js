@@ -51,7 +51,13 @@ function SearchResults({results, isSemantic}) {
     const authorMatches = [...authors.matchAll(expr)];
     
     if (authorMatches.length === 0) {
-      return (<ul><li>No authors available</li></ul>);
+      const backupexpr = /(.*)/g;
+      const matchesNoLinks = [...authors.matchAll(backupexpr)]
+      return (<ul>
+        {matchesNoLinks.map((match, index) => (
+          <li key={index}>{match[1]}</li>
+        ))}
+      </ul>);
     }
     
     return (
@@ -97,9 +103,12 @@ function SearchResults({results, isSemantic}) {
                 {/* Left: Title + Page */}
                 <div>
                   <div className="header-row">
-                  <Link to={{pathname: `/pdf/${doc.id}`, hash: `page=${doc.page + 1}`}} state={{title: title}} className="result-link">
+                  {doc.redirect 
+                  ? <a href={`${doc.uri}#page=${doc.page + 1}`} style={{textDecoration: 'none'}}><h3 className="doc-title">{title}</h3></a> 
+                  : <Link to={{pathname: `/pdf/${doc.id}`, hash: `page=${doc.page + 1}`}} state={{title: title}} className="result-link">
                     <h3 className="doc-title">{title}</h3>
                   </Link>
+                  }
                   </div>
 
                   <div className="header-row">

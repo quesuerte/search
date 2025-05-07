@@ -107,6 +107,13 @@ async fn main() -> Result<(), rocket::Error> {
     Ok(())
 }
 
+/* 
+$env:BACKEND_USER="search_readonly"
+$env:BACKEND_PASS="test_password"
+$env:BACKEND_HOST="ubuntu"
+$env:OLLAMA_HOST="ubuntu"
+*/
+
 #[cfg(test)]
 mod tests {
     use super::*;
