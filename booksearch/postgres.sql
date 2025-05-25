@@ -52,6 +52,7 @@ CREATE TABLE sources (
     id VARCHAR(2048) PRIMARY KEY,
     source VARCHAR(2048) NOT NULL,
     redirect BOOLEAN NOT NULL,
+    content_type VARCHAR(30) NOT NULL,
     uri VARCHAR(2048) NOT NULL,
     title VARCHAR(2048),
     author VARCHAR(2048),

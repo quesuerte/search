@@ -6,10 +6,10 @@ spec:
   selector:
     app: pdf-app
   ports:
-  #- name: ollama
-  #  protocol: "TCP"
-  #  port: 11434
-  #  targetPort: ollama-port
+  - name: ollama
+    protocol: "TCP"
+    port: 11434
+    targetPort: ollama-port
   - name: pgvector
     protocol: "TCP"
     port: 5432
@@ -22,30 +22,12 @@ spec:
     protocol: "TCP"
     port: 8080
     targetPort: pul-http-port
-  #- name: booksearch
-  #  protocol: "TCP"
-  #  port: 8000
-  #  targetPort: bs-port
-  # - name: kafka-ext
-  #   protocol: "TCP"
-  #   port: 29092
-  #   targetPort: extkafka-port
+  - name: booksearch
+    protocol: "TCP"
+    port: 9000
+    targetPort: bs-port
   - name: pulsar
     protocol: "TCP"
     port: 6650
     targetPort: pulsar-port
   type: LoadBalancer
-# ---
-# apiVersion: v1
-# kind: Service
-# metadata:
-#   name: kafka-internal
-# spec:
-#   selector:
-#     app: pdf-app
-#   ports:
-#   - name: kafka
-#     protocol: "TCP"
-#     port: 9092
-#     targetPort: kafka-port
-#   type: ClusterIP

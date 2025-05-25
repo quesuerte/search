@@ -5,6 +5,7 @@ import './App.css';
 // Lazy load components
 const SearchPage = lazy(() => import('./components/SearchPage'));
 const PDFReader = lazy(() => import('./components/PDFReader'));
+const EPUBReader = lazy(() => import('./components/EPUBReader'));
 
 // Loading component
 const LoadingFallback = () => <div className="loading">Loading...</div>;
@@ -20,6 +21,7 @@ function App() {
                 <Routes>
                   <Route path="/" element={<SearchPage />} />
                   <Route path="/pdf/:documentId" element={<PDFReader />} />
+                  <Route path="/epub/:documentId" element={<EPUBReader />} />
                 </Routes>
               </Suspense>
             </main>

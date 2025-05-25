@@ -1,3 +1,4 @@
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -12,6 +13,8 @@ spec:
       labels:
         app: pdf-app
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: raspberrypi
       hostname: postgres
       containers:
       - name: postgres-container
@@ -23,8 +26,11 @@ spec:
         - name: pgvector-port
           containerPort: 5432
         volumeMounts:
-        - name: pgvector-sql
-          mountPath: /docker-entrypoint-initdb.d/pgvector.sql
+        #- name: pgvector-sql
+        #  mountPath: /docker-entrypoint-initdb.d/pgvector.sql
+        #  subPath: pgvector.sql
+        - name: storage
+          mountPath: /var/lib/postgresql/data
         livenessProbe:
           exec:
             command:
@@ -46,6 +52,11 @@ spec:
           timeoutSeconds: 5
           failureThreshold: 3
       volumes:
-      - name: pgvector-sql
+      #- name: pgvector-sql
+      #  configMap:
+      #    name: init-sql 
+        #hostPath:
+        #  path: /run/desktop/mnt/host/c/Users/Blinn/Documents/rust/search_project/booksearch/postgres.sql
+      - name: storage
         hostPath:
-          path: /run/desktop/mnt/host/c/Users/Blinn/Documents/rust/search_project/booksearch/postgres.sql
+          path: /opt/postgres/data

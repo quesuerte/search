@@ -22,9 +22,22 @@ spec:
         args:
           - -c
           - 'ollama serve & pid=$!; sleep 5; ollama pull all-minilm; wait $pid'
-        resources:
-          limits:
-            nvidia.com/gpu: 1
         ports:
         - name: ollama-port
           containerPort: 11434
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 11434
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+      resources:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+        limits:
+          cpu: "1"
+          memory: "2Gi"
+

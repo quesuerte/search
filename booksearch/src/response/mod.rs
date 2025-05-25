@@ -92,6 +92,7 @@ struct RowResponse {
     id: String,
     uri: String,
     redirect: bool,
+    content_type: String,
     source: String,
     page: i32,
     title: String,
@@ -114,6 +115,7 @@ pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Opti
         let id: String = row.get("id");
         let uri: String = row.get("uri");
         let redirect: bool = row.get("redirect");
+        let content_type: String = row.get("content_type");
         let source: String = row.get("source");
         let page: i32 = row.get("page");
         let title: String = row.try_get("title").unwrap_or(id.clone());
@@ -126,7 +128,7 @@ pub async fn search(db: Connection<PostgresBackend>, query: &str, semantic: Opti
                 Err(e) => return Err(ServerError::new(format!("Could not parse rank column into i32 or f64: {}", e.to_string())))
             }
         };
-        results.push(RowResponse{id,uri,redirect,source,page,title,author,summary,rank});
+        results.push(RowResponse{id,uri,redirect,content_type,source,page,title,author,summary,rank});
     }
     Ok(QueryResponse{results})
 }

@@ -105,7 +105,7 @@ function SearchResults({results, isSemantic}) {
                   <div className="header-row">
                   {doc.redirect 
                   ? <a href={`${doc.uri}#page=${doc.page + 1}`} style={{textDecoration: 'none'}}><h3 className="doc-title">{title}</h3></a> 
-                  : <Link to={{pathname: `/pdf/${doc.id}`, hash: `page=${doc.page + 1}`}} state={{title: title}} className="result-link">
+                  : <Link to={{pathname: `/${doc.contentType.equals('application/epub') ? 'epub' : 'pdf'}/${doc.id}`, hash: `page=${doc.page + 1}`}} state={{title: title}} className="result-link">
                     <h3 className="doc-title">{title}</h3>
                   </Link>
                   }
