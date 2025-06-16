@@ -1,0 +1,85 @@
+# Gateway API and traefik config
+# kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/<latest>/standard-install.yaml"
+# helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --set config.apiVersion="controller.config.cert-manager.io/v1alpha1" --set config.kind="ControllerConfiguration" --set config.enableGatewayAPI=true
+# k3s comes with traefik v2, install v3:
+# helm uninstall traefik -n kube-system
+# kubectl apply -f https://raw.githubusercontent.com/traefik/traefik/v3.4/docs/content/reference/dynamic-configuration/kubernetes-gateway-rbac.yml
+# helm repo add traefik https://traefik.github.io/charts
+# helm repo update
+# helm install traefik traefik/traefik -n kube-system --set providers.kubernetesGateway.enabled=true --set providers.kubernetesIngress.enabled=false --set gateway.namespacePolicy=All
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: traefik
+spec:
+  controllerName: traefik.io/gateway-controller
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+  namespace: default
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: carson.blinn@gmail.com
+    # If the ACME server supports profiles, you can specify the profile name here.
+    # See #acme-certificate-profiles below.
+    profile: tlsserver
+    # Can also test requesting staging certs before doing the real thing!
+    #server: https://acme-staging-v02.api.letsencrypt.org/directory
+    server: https://acme-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      # This is your identity with your ACME provider. Any secret name may be
+      # chosen. It will be populated with data automatically, so generally
+      # nothing further needs to be done with the secret. If you lose this
+      # identity/secret, you will be able to generate a new one and generate
+      # certificates for any/all domains managed using your previous account,
+      # but you will be unable to revoke any certificates generated using that
+      # previous account.
+      name: letsenc-key
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: traefik-gateway
+                namespace: default
+                kind: Gateway
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: default
+spec:
+  acme:
+    # You must replace this email address with your own.
+    # Let's Encrypt will use this to contact you about expiring
+    # certificates, and issues related to your account.
+    email: carson.blinn@gmail.com
+    # If the ACME server supports profiles, you can specify the profile name here.
+    # See #acme-certificate-profiles below.
+    profile: tlsserver
+    # Can also test requesting staging certs before doing the real thing!
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    privateKeySecretRef:
+      # Secret resource that will be used to store the account's private key.
+      # This is your identity with your ACME provider. Any secret name may be
+      # chosen. It will be populated with data automatically, so generally
+      # nothing further needs to be done with the secret. If you lose this
+      # identity/secret, you will be able to generate a new one and generate
+      # certificates for any/all domains managed using your previous account,
+      # but you will be unable to revoke any certificates generated using that
+      # previous account.
+      name: letsenc-key-staging
+    solvers:
+      - http01:
+          gatewayHTTPRoute:
+            parentRefs:
+              - name: traefik-gateway
+                namespace: default
+                kind: Gateway

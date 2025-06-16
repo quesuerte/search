@@ -1,0 +1,29 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: traefik-gateway
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  gatewayClassName: traefik
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 8000
+    allowedRoutes:
+        namespaces:
+          from: All
+  - name: https
+    protocol: HTTPS
+    hostname: search.carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: search-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Same
