@@ -1,0 +1,171 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config-map
+data:
+  nginx.conf: |
+    #user       www www;  ## Default: nobody
+    worker_processes  auto;  ## Default: 1
+    #error_log  logs/error.log;
+    pid        /tmp/nginx/nginx.pid;
+    worker_rlimit_nofile 8192;
+    error_log  /var/log/nginx/error.log notice;
+
+    events {
+      worker_connections  1024;  ## Default: 1024
+    }
+
+    http {
+      #include    conf/mime.types;
+      #include    /etc/nginx/proxy.conf;
+      #include    /etc/nginx/fastcgi.conf;
+      #index    index.html index.htm index.php;
+      proxy_temp_path /tmp/nginx/proxy_temp;
+      client_body_temp_path /tmp/nginx/client_temp;
+      fastcgi_temp_path /tmp/nginx/fastcgi_temp;
+      uwsgi_temp_path /tmp/nginx/uwsgi_temp;
+      scgi_temp_path /tmp/nginx/scgi_temp;
+      server_tokens off;
+      access_log  /var/log/nginx/access.log;
+
+      default_type application/octet-stream;
+      #access_log   logs/access.log  main;
+      sendfile     on;
+      sendfile_max_chunk 512k;
+      tcp_nopush   on;
+      server_names_hash_bucket_size 128; # this seems to be required for some vhosts
+      limit_req_zone $binary_remote_addr zone=one:10m rate=120r/m;
+      limit_conn_zone $binary_remote_addr zone=addr:10m;
+
+      server {
+            http2 on;
+            listen 8080;
+            server_name 67.245.25.121;
+            root /www/birthday_website;
+      }
+      server {
+            http2 on;
+            listen 8080 default_server;
+            server_name _;
+            return 404;
+      }
+      server { # carson
+        listen  8080;
+        listen  [::]:8080;
+        http2 on;
+
+            gzip on;
+        gzip_comp_level    5;
+        gzip_min_length    256;
+        gzip_proxied       any;
+        gzip_vary          on;
+
+        gzip_types
+        application/atom+xml
+        application/javascript
+        application/json
+        application/ld+json
+        application/manifest+json
+        application/rss+xml
+        application/vnd.geo+json
+        application/vnd.ms-fontobject
+        application/x-font-ttf
+        application/x-web-app-manifest+json
+        application/xhtml+xml
+        application/xml
+        font/opentype
+        image/bmp
+        image/svg+xml
+        image/x-icon
+        text/cache-manifest
+        text/css
+        text/plain
+        text/vcard
+        text/vnd.rim.location.xloc
+        text/vtt
+        text/x-component
+        text/x-cross-domain-policy;
+        # text/html is always compressed by gzip module
+
+            #add_header Content-Security-Policy "default-src 'self' https://cdnjs.cloudflare.com https://www.w3schools.com; frame-src 'self' https://open.spotifycdn.com https://open.spotify.com; script-src https://gist.github.com;" always;
+
+
+        # replace with the IP address of your resolver
+        resolver 8.8.8.8;
+        server_name  carsonblinn.com;
+        root         /www/carson;
+        #access_log   logs/domain1.access.log  main;
+        limit_conn addr 10;
+      }
+      server {
+        http2 on;
+        listen 8080;
+        server_name pdf.carsonblinn.com;
+        root /www/react;
+        index index.html;
+
+        location / {
+          include  /etc/nginx/mime.types;
+          try_files $uri /index.html;
+        }
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment 
+spec:
+  selector:
+    matchLabels:
+      app: pdf-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: pdf-app
+    spec:
+      nodeSelector:
+        kubernetes.io/hostname: raspberrypi
+      hostname: nginx
+      containers:
+      - name: nginx-container
+        image: nginxinc/nginx-unprivileged:alpine
+        ports:
+        - name: nginx-http
+          containerPort: 8080
+        volumeMounts:
+        - name: conf
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        - name: nginx-tmp
+          mountPath: /tmp/nginx 
+        - name: nginx-cache
+          mountPath: /var/cache/nginx 
+        - name: nginx-pid
+          mountPath: /var/run 
+        - name: images
+          mountPath: /www/carson/images 
+          readOnly: true
+        - name: www
+          mountPath: /www  
+          readOnly: true
+      volumes:
+      - name: conf
+        configMap:
+          name: nginx-config-map
+      - name: nginx-tmp
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: nginx-cache
+        emptyDir:
+          sizeLimit: 500Mi
+      - name: nginx-pid
+        emptyDir:
+          sizeLimit: 1Mi
+      - name: images
+        hostPath:
+          path: /media/website_assets/images 
+      - name: www
+        hostPath:
+          path: /media/website_assets/www 
