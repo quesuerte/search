@@ -2,6 +2,19 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
+  name: birthdaysite
+spec:
+  parentRefs:
+  - name: traefik-gateway
+    sectionName: http
+  rules:
+  - backendRefs:
+    - name: pdf-service
+      port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
   name: cb-search-http
 spec:
   parentRefs:
@@ -22,10 +35,72 @@ metadata:
 spec:
   parentRefs:
   - name: traefik-gateway
-    sectionName: https
+    sectionName: search-https
   hostnames:
   - "search.carsonblinn.com"
   rules:
   - backendRefs:
     - name: pdf-service
       port: 9000
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-pdf-http
+spec:
+  parentRefs:
+  - name: traefik-gateway
+    sectionName: http
+  hostnames:
+  - "pdf.carsonblinn.com"
+  rules:
+  - filters:
+      - type: RequestRedirect
+        requestRedirect:
+          scheme: https
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-pdf-https
+spec:
+  parentRefs:
+  - name: traefik-gateway
+    sectionName: pdf-https
+  hostnames:
+  - "pdf.carsonblinn.com"
+  rules:
+  - backendRefs:
+    - name: pdf-service
+      port: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-http
+spec:
+  parentRefs:
+  - name: traefik-gateway
+    sectionName: http
+  hostnames:
+  - "carsonblinn.com"
+  rules:
+  - filters:
+      - type: RequestRedirect
+        requestRedirect:
+          scheme: https
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cb-https
+spec:
+  parentRefs:
+  - name: traefik-gateway
+    sectionName: root-https
+  hostnames:
+  - "carsonblinn.com"
+  rules:
+  - backendRefs:
+    - name: pdf-service
+      port: 8080

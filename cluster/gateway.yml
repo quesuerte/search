@@ -15,7 +15,7 @@ spec:
     allowedRoutes:
         namespaces:
           from: All
-  - name: https
+  - name: search-https
     protocol: HTTPS
     hostname: search.carsonblinn.com
     port: 8443
@@ -23,6 +23,30 @@ spec:
       mode: Terminate
       certificateRefs:
         - name: search-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: pdf-https
+    protocol: HTTPS
+    hostname: pdf.carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: pdf-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: root-https
+    protocol: HTTPS
+    hostname: carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: root-cert
           namespace: default
     allowedRoutes:
       namespaces:
