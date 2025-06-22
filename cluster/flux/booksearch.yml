@@ -16,20 +16,20 @@ spec:
       hostname: booksearch
       imagePullSecrets:
       - name: blinnc-docker
-      hostAliases:
-      - ip: "192.168.0.102"
-        hostnames:
-        - "ubuntu"
       containers:
       - name: booksearch-container
         image: blinnc/search:next
         env:
-        - name: POSTGRES_PASSWORD
-          value: admin
         - name: BACKEND_USER
-          value: "search_readonly"
+          valueFrom:
+          secretKeyRef:
+            name: pg-secret
+            key: username
         - name: BACKEND_PASS
-          value: "test_password"
+          valueFrom:
+          secretKeyRef:
+            name: pg-secret
+            key: password
         - name: BACKEND_HOST
           value: "pdf-service"
         - name: OLLAMA_HOST
