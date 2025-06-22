@@ -1,3 +1,5 @@
+# Adding k3s agents
+# curl -sfL https://get.k3s.io | INSTALL_K3S_VERSION=v1.32.4+k3s1 K3S_NODE_NAME=ubuntu K3S_URL=https://raspberrypi:6443 K3S_TOKEN=`sudo cat /var/lib/rancher/k3s/server/node-token` sh -
 # Gateway API and traefik config
 # kubectl apply -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/<latest>/standard-install.yaml"
 # helm upgrade --install cert-manager jetstack/cert-manager --namespace cert-manager --set config.apiVersion="controller.config.cert-manager.io/v1alpha1" --set config.kind="ControllerConfiguration" --set config.enableGatewayAPI=true
@@ -7,6 +9,7 @@
 # helm repo add traefik https://traefik.github.io/charts
 # helm repo update
 # helm install traefik traefik/traefik -n kube-system --set providers.kubernetesGateway.enabled=true --set providers.kubernetesIngress.enabled=false --set gateway.namespacePolicy=All
+# flux bootstrap git --url=ssh://git@github.com/quesuerte/search --branch=main --private-key-file=<private_key> --components-extra=image-reflector-controller,image-automation-controller --path=cluster/flux
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
