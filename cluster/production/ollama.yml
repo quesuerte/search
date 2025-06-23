@@ -14,6 +14,8 @@ spec:
         app: pdf-app
     spec:
       hostname: ollama
+      # Ollama image is super heavy
+      imagePullPolicy: IfNotPresent
       containers:
       - name: ollama-container
         image: ollama/ollama:latest
