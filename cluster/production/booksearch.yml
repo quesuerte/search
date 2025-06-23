@@ -21,15 +21,17 @@ spec:
         image: blinnc/search:next
         env:
         - name: BACKEND_USER
-          valueFrom:
-          secretKeyRef:
-            name: pg-secret
-            key: username
+          value: "search_readonly" 
+#         valueFrom:
+#         secretKeyRef:
+#           name: pg-secret
+#           key: username
         - name: BACKEND_PASS
-          valueFrom:
-          secretKeyRef:
-            name: pg-secret
-            key: password
+          value: "test_password"
+#         valueFrom:
+#         secretKeyRef:
+#           name: pg-secret
+#           key: password
         - name: BACKEND_HOST
           value: "pdf-service"
         - name: OLLAMA_HOST
