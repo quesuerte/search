@@ -10,6 +10,8 @@
 # helm repo update
 # helm install traefik traefik/traefik -n kube-system --set providers.kubernetesGateway.enabled=true --set providers.kubernetesIngress.enabled=false --set gateway.namespacePolicy=All
 # flux bootstrap git --url=ssh://git@github.com/quesuerte/search --branch=main --private-key-file=<private_key> --components-extra=image-reflector-controller,image-automation-controller --path=cluster/flux
+# flux create source git pdfsearch --url=https://github.com/quesuerte/search --branch=main --interval=1m --export > ./cluster/flux/pdfsearch-source.yml      
+# flux create kustomization pdfsearch  --target-namespace=default  --source=pdfsearch  --path="./cluster/production"  --prune=true  --wait=true  --interval=30m  --retry-interval=2m  --health-check-timeout=3m  --export > ./cluster/flux/pdfsearch-kustomization.yaml
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
