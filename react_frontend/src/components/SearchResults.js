@@ -105,7 +105,7 @@ function SearchResults({results, isSemantic}) {
                   <div className="header-row">
                   {doc.redirect 
                   ? <a href={`${doc.uri}#page=${doc.page + 1}`} style={{textDecoration: 'none'}}><h3 className="doc-title">{title}</h3></a> 
-                  : <Link to={{pathname: `/${doc.contentType.equals('application/epub') ? 'epub' : 'pdf'}/${doc.id}`, hash: `page=${doc.page + 1}`}} state={{title: title}} className="result-link">
+                  : <Link to={{pathname: `/${doc.contentType && doc.contentType.equals('application/epub') ? 'epub' : 'pdf'}/${doc.id}`, hash: `page=${doc.page + 1}`}} state={{title: title}} className="result-link">
                     <h3 className="doc-title">{title}</h3>
                   </Link>
                   }
@@ -118,7 +118,7 @@ function SearchResults({results, isSemantic}) {
                       >
                       {isExpanded ? 'Hide details' : 'Show details'}
                     </button>
-                    <p><a href={doc.source} style={{color: '#4a90e2'}}>Source</a></p>
+                    {doc.source && <p><a href={doc.source} style={{color: '#4a90e2'}}>Source</a></p>}
                     <p>Page: {doc.page + 1}</p>
                   </div>
                 </div>
