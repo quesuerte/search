@@ -51,7 +51,7 @@ spec:
         image: alpine:latest
         env:
         - name: PULSAR_URL
-          value: "http://pdf-service:8080"
+          value: "http://pdf-service:9090"
         command:
         - sh
         - -c
@@ -64,7 +64,6 @@ spec:
           apk add curl --no-cache
           curl -X PUT "${PULSAR_URL}/admin/v2/persistent/public/default/search_log"
           curl -s -L --output-dir /pulsar/connectors/pulsar/connectors -o pulsar-io-jdbc-postgres-4.0.6.nar 'https://www.apache.org/dyn/closer.lua/pulsar/pulsar-4.0.6/connectors/pulsar-io-jdbc-postgres-4.0.6.nar?action=download'
-          curl -s -o /pulsar/connectors/pulsar/connectors/pulsar-io-jdbc-postgres-4.0.6.nar 'https://www.apache.org/dyn/closer.lua/pulsar/pulsar-4.0.6/connectors/pulsar-io-jdbc-postgres-4.0.6.nar?action=download'
           curl -v -X POST "${PULSAR_URL}/admin/v3/sinks/public/default/postgres-sink" -H "Expect:" \
           -F "sinkConfig={\"tenant\": \"public\",\"namespace\": \"default\",\"name\": \"postgres-sink\",\"inputs\": [\"search_log\"],\"configs\": {\"jdbcUrl\": \"jdbc:postgresql://pdf-service:5432/logs\",\"tableName\": \"search_requests_raw\",\"userName\": \"log_writer\",\"password\": \"test_password\"}};type=application/json" \
           -F "data=@/pulsar/connectors/pulsar-io-jdbc-postgres-4.0.6.nar" || exit 1

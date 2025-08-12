@@ -18,10 +18,10 @@ spec:
     protocol: "TCP"
     port: 8888
     targetPort: jupyter-port
-# - name: pulsar-http
-#   protocol: "TCP"
-#   port: 8080
-#   targetPort: pul-http-port
+  - name: pulsar-http
+    protocol: "TCP"
+    port: 9090
+    targetPort: pul-http-port
   - name: nginx
     protocol: "TCP"
     port: 8080
