@@ -40,7 +40,7 @@ data:
       server {
             http2 on;
             listen 8080;
-            server_name 67.245.25.121;
+            server_name 67.245.16.133;
             root /www/birthday_website;
       }
       server {
