@@ -16,7 +16,6 @@ data:
     }
 
     http {
-      include    /etc/nginx/mime.types;
       #include    /etc/nginx/proxy.conf;
       #include    /etc/nginx/fastcgi.conf;
       #index    index.html index.htm index.php;
@@ -37,6 +36,7 @@ data:
       limit_conn_zone $binary_remote_addr zone=addr:10m;
 
       server {
+            include    /etc/nginx/mime.types;
             http2 on;
             listen 8080;
             server_name 67.245.16.133;
