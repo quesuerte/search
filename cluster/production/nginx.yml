@@ -28,7 +28,6 @@ data:
       server_tokens off;
       access_log  /var/log/nginx/access.log;
 
-      default_type application/octet-stream;
       #access_log   logs/access.log  main;
       sendfile     on;
       sendfile_max_chunk 512k;
