@@ -37,17 +37,18 @@ data:
       limit_req_zone $binary_remote_addr zone=one:10m rate=120r/m;
       limit_conn_zone $binary_remote_addr zone=addr:10m;
 
-      server {
-            http2 on;
-            listen 8080;
-            server_name 67.245.16.133;
-            root /www/birthday_website;
-      }
+#     server {
+#           http2 on;
+#           listen 8080;
+#           server_name 67.245.16.133;
+#           root /www/birthday_website;
+#     }
       server {
             http2 on;
             listen 8080 default_server;
             server_name _;
-            return 404;
+            root /www/birthday_website;
+#           return 404;
       }
       server { # carson
         listen  8080;
