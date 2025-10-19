@@ -41,6 +41,9 @@ data:
             listen 8080;
             server_name 67.245.16.133;
             root /www/birthday_website;
+            location /2023 {
+              root /www/birthday_website_back;
+            }
       }
       server {
             http2 on;
