@@ -41,8 +41,14 @@ data:
             listen 8080;
             server_name 67.245.16.133;
             root /www/birthday_website;
+            location / {
+                try_files $uri $uri/ =404;
+            }
+
+            # Secondary site at /2023
             location /2023 {
-              root /www/birthday_website_back;
+                alias /www/birthday_website_back;
+                try_files $uri $uri/ =404;
             }
       }
       server {
