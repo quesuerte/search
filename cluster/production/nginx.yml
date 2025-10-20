@@ -27,6 +27,8 @@ data:
       server_tokens off;
       access_log  /var/log/nginx/access.log;
 
+      port_in_redirect off;
+
       #access_log   logs/access.log  main;
       sendfile     on;
       sendfile_max_chunk 512k;
