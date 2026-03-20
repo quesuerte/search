@@ -7,4 +7,3 @@ resources:
   - nginx.yml
   - ollama.yml
   - booksearch.yml
-  - pulsar.yml
