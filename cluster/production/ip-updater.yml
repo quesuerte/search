@@ -50,12 +50,12 @@ spec:
                   set -o pipefail
                   IPV4=$(curl -sf -4 --retry 3 --retry-delay 5 --max-time 5 ifconfig.me || true)
                   IPV6=$(curl -sf -6 --retry 3 --retry-delay 5 --max-time 5 ifconfig.me || true)
+                  echo "Got IPV4: $IPV4, IPV6: $IPV6"
                   if [ -z "${IPV4}" ] && [ -z "${IPV6}" ]; then
                     echo "ERROR: Could not determine any public IP address"
                     exit 1
                   fi
                   TARGET=$(printf '%s\n' "${IPV4}" "${IPV6}" | grep -v '^$' | paste -sd ',')
 
-                  kubectl annotate gateway traefik-gateway --overwrite \
-                    external-dns.alpha.kubernetes.io/target="$TARGET"
+                  kubectl annotate gateway traefik-gateway --overwrite external-dns.alpha.kubernetes.io/target="$TARGET"
           restartPolicy: OnFailure
