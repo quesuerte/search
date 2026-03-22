@@ -56,20 +56,6 @@ spec:
                   fi
                   TARGET=$(printf '%s\n' "${IPV4}" "${IPV6}" | grep -v '^$' | paste -sd ',')
 
-                  cat <<EOF | kubectl apply -f -
-                  apiVersion: helm.cattle.io/v1
-                  kind: HelmChartConfig
-                  metadata:
-                    name: traefik
-                    namespace: kube-system
-                  spec:
-                    valuesContent: |
-                      providers:
-                        kubernetesGateway:
-                          enabled: true
-                      service:
-                        type: LoadBalancer
-                        annotations:
-                          external-dns.alpha.kubernetes.io/target: "$TARGET"
-                  EOF
+                  kubectl annotate gateway traefik-gateway --overwrite \
+                    external-dns.alpha.kubernetes.io/target="$TARGET"
           restartPolicy: OnFailure
