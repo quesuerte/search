@@ -21,13 +21,11 @@ spec:
         image: blinnc/search:next
         env:
         - name: BACKEND_USER
-#         value: "search_readonly" 
           valueFrom:
           secretKeyRef:
             name: pg-secret
             key: username
         - name: BACKEND_PASS
-#         value: "test_password"
           valueFrom:
           secretKeyRef:
             name: pg-secret
