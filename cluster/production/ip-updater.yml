@@ -58,4 +58,5 @@ spec:
                   TARGET=$(printf '%s\n' "${IPV4}" "${IPV6}" | grep -v '^$' | paste -sd ',')
 
                   kubectl annotate gateway traefik-gateway --overwrite external-dns.alpha.kubernetes.io/target="$TARGET" -n default
+          hostNetwork: true
           restartPolicy: OnFailure
