@@ -10,8 +10,8 @@ metadata:
   name: ip-updater
   namespace: kube-system
 rules:
-  - apiGroups: ["helm.cattle.io"]
-    resources: ["helmchartconfigs"]
+  - apiGroups: ["gateway.networking.k8s.io"]
+    resources: ["gateways"]
     verbs: ["get", "patch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
@@ -48,7 +48,14 @@ spec:
                 - -ec
                 - |
                   set -o pipefail
-                  CURRENT_IP=$(curl -sf --retry 3 --retry-delay 5 https://api.ipify.org)
+                  IPV4=$(curl -sf -4 --retry 3 --retry-delay 5 --max-time 5 ifconfig.me || true)
+                  IPV6=$(curl -sf -6 --retry 3 --retry-delay 5 --max-time 5 ifconfig.me || true)
+                  if [ -z "${IPV4}" ] && [ -z "${IPV6}" ]; then
+                    echo "ERROR: Could not determine any public IP address"
+                    exit 1
+                  fi
+                  TARGET=$(printf '%s\n' "${IPV4}" "${IPV6}" | grep -v '^$' | paste -sd ',')
+
                   cat <<EOF | kubectl apply -f -
                   apiVersion: helm.cattle.io/v1
                   kind: HelmChartConfig
@@ -62,6 +69,7 @@ spec:
                           enabled: true
                       service:
                         type: LoadBalancer
-                        loadBalancerIP: "$CURRENT_IP"
+                        annotations:
+                          external-dns.alpha.kubernetes.io/target: "$TARGET"
                   EOF
           restartPolicy: OnFailure
