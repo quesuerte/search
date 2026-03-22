@@ -22,14 +22,14 @@ spec:
         env:
         - name: BACKEND_USER
           valueFrom:
-          secretKeyRef:
-            name: pg-secret
-            key: username
+            secretKeyRef:
+              name: pg-secret
+              key: username
         - name: BACKEND_PASS
           valueFrom:
-          secretKeyRef:
-            name: pg-secret
-            key: password
+            secretKeyRef:
+              name: pg-secret
+              key: password
         - name: BACKEND_HOST
           value: "pdf-service"
         - name: OLLAMA_HOST
