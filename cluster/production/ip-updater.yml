@@ -61,10 +61,7 @@ spec:
                         kubernetesGateway:
                           enabled: true
                       service:
-                        annotations:
-                          svccontroller.k3s.cattle.io/enablelb: "false"
-                        spec:
-                          externalIPs:
-                            - "$CURRENT_IP"
+                        type: LoadBalancer
+                        loadBalancerIP: "$CURRENT_IP"
                   EOF
           restartPolicy: OnFailure
