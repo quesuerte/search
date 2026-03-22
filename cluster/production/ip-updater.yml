@@ -64,5 +64,8 @@ spec:
                         spec:
                           externalIPs:
                             - "$CURRENT_IP"
+                        externalTrafficPolicy: Local
+                      additionalArguments:
+                        - "--providers.kubernetesIngress.allowExternalNameServices=true"
                   EOF
           restartPolicy: OnFailure
