@@ -34,7 +34,10 @@ metadata:
   name: update-external-ip
   namespace: kube-system
 spec:
-  schedule: "*/5 * * * *"
+  schedule: "* * * * *"
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 3
+  concurrencyPolicy: Forbid
   jobTemplate:
     spec:
       template:
@@ -59,4 +62,4 @@ spec:
 
                   kubectl annotate gateway traefik-gateway --overwrite external-dns.alpha.kubernetes.io/target="$TARGET" -n default
           hostNetwork: true
-          restartPolicy: OnFailure
+          restartPolicy: Never
