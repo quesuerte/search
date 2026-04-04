@@ -83,7 +83,7 @@ spec:
   - name: traefik-gateway
     sectionName: http
   hostnames:
-  - "carsonblinn.com"
+  - "*.carsonblinn.com"
   rules:
   - filters:
       - type: RequestRedirect
@@ -99,7 +99,7 @@ spec:
   - name: traefik-gateway
     sectionName: root-https
   hostnames:
-  - "carsonblinn.com"
+  - "*.carsonblinn.com"
   rules:
   - backendRefs:
     - name: pdf-service
