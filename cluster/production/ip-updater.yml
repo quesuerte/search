@@ -46,6 +46,11 @@ spec:
           containers:
             - name: update-ip
               image: bitnami/kubectl:latest
+              env:
+              - name: KUBERNETES_SERVICE_HOST                                                                                                                  
+                value: "raspberrypi"                                                                              
+              - name: KUBERNETES_SERVICE_PORT                                                                                                                  
+                value: "6443"
               command:
                 - /bin/sh
                 - -ec
