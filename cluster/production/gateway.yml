@@ -1,0 +1,72 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: traefik-gateway
+  namespace: default
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    # Need this since the external-dns job sets an annotation
+    kustomize.toolkit.fluxcd.io/ssa: Merge
+spec:
+  gatewayClassName: traefik
+  listeners:
+  - name: http
+    protocol: HTTP
+    port: 8000
+    allowedRoutes:
+        namespaces:
+          from: All
+  - name: search-https
+    protocol: HTTPS
+    hostname: search.carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: search-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: pdf-https
+    protocol: HTTPS
+    hostname: pdf.carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: pdf-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Same
+  - name: flux-https
+    protocol: HTTPS
+    hostname: flux.carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: flux-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Selector
+        selector:
+          matchExpressions:
+          - key: kubernetes.io/metadata.name
+            operator: In
+            values:
+            - flux-system
+  - name: root-https
+    protocol: HTTPS
+    hostname: carsonblinn.com
+    port: 8443
+    tls:
+      mode: Terminate
+      certificateRefs:
+        - name: root-cert
+          namespace: default
+    allowedRoutes:
+      namespaces:
+        from: Same
