@@ -57,6 +57,7 @@ spec:
           - key: kubernetes.io/metadata.name
             operator: In
             values:
+            - default
             - flux-system
   - name: root-https
     protocol: HTTPS
