@@ -60,6 +60,6 @@ spec:
                   TARGET=$(printf '%s\n' "${IPV4}" "${IPV6}" | grep -v '^$' | paste -sd ',')
                   echo "Got target: $TARGET"
 
-                  kubectl annotate gateway traefik-gateway --overwrite external-dns.alpha.kubernetes.io/target="$TARGET" -n kube-system
+                  kubectl annotate gateway traefik-gateway --overwrite external-dns.alpha.kubernetes.io/target="$TARGET" -n default
           hostNetwork: true
           restartPolicy: Never
