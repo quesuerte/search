@@ -128,7 +128,7 @@ spec:
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: cb-search-http
+  name: flux-http
 spec:
   parentRefs:
   - name: traefik-gateway
