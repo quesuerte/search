@@ -15,22 +15,17 @@ spec:
       kind: GitRepository
       name: pdfsearch
 ---
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: ReferenceGrant
 metadata:
-  name: flux
+  name: allow-frontend-route
   namespace: flux-system
 spec:
-  parentRefs:
-    - name: traefik-gateway
-      namespace: default
-  hostnames:
-    - "flux.carsonblinn.com"
-  rules:
-    - matches:
-        - path:
-            type: PathPrefix
-            value: /hook
-      backendRefs:
-        - name: flux-https
-          port: 8443
+  from:
+  - group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    namespace: default
+  to:
+  - group: ""
+    kind: Service
+
